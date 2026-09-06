@@ -1,0 +1,387 @@
+/*
+  Spot the Opportunity — UEL Careers and Student Enterprise "Enterprise" brand.
+
+  Colour tokens (exactly these, no others besides black and white):
+    --color-amethyst   #9E61A4  ambition, transformation, higher thinking
+    --color-black      #282727  sophistication, strength, formality
+    --color-limelight  #E8FA23  optimism, momentum, opportunity
+    --color-white      #FFFFFF
+
+  Rule: all text is --color-black unless it sits on a --color-black
+  background, where text may be white or amethyst. Limelight is used only as
+  a background/border/accent behind dark text or content — never as text on
+  white, never as a background under white/light text.
+*/
+
+:root {
+  --color-amethyst: #9e61a4;
+  --color-black: #282727;
+  --color-limelight: #e8fa23;
+  --color-white: #ffffff;
+
+  /*
+    Brand fonts are Signifier Medium/Italic (headline) and Founders Grotesk
+    Text Light/Medium (body) — licensed Klim Type Foundry faces not on any
+    reachable CDN. Substitutes below. SWAP-IN SPOT: once self-hosted brand
+    font files are available under public/fonts/, add @font-face rules here
+    and point these two variables at the real family names instead.
+  */
+  --font-headline: "Newsreader", Georgia, "Times New Roman", serif;
+  --font-body: "Archivo", "Segoe UI", Helvetica, Arial, sans-serif;
+
+  --max-width: 640px;
+  --radius: 4px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  background: var(--color-white);
+  color: var(--color-black);
+  font-family: var(--font-body);
+  font-weight: 300;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Decorative angular accent shapes ---------- */
+/* One or two diagonal-cut polygon accents, used sparingly — not a pattern. */
+.bg-shapes {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.shape {
+  position: absolute;
+}
+
+.shape polygon {
+  fill: var(--color-amethyst);
+}
+
+.shape-a {
+  top: -50px;
+  right: -80px;
+  width: 240px;
+  height: 320px;
+  opacity: 0.14;
+}
+
+.shape-b {
+  top: -10px;
+  right: -10px;
+  width: 60px;
+  height: 60px;
+  opacity: 0.9;
+}
+
+.shape-b polygon {
+  fill: var(--color-limelight);
+}
+
+@media (max-width: 700px) {
+  .shape-a {
+    width: 160px;
+    height: 220px;
+  }
+  .shape-b {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* ---------- Layout ---------- */
+.page {
+  position: relative;
+  z-index: 1;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 3rem 1.5rem 2.5rem;
+  text-align: left;
+}
+
+.site-header {
+  position: relative;
+  margin-bottom: 2.5rem;
+}
+
+.site-name {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+h1 {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-headline);
+  font-weight: 500;
+  font-size: 2.25rem;
+  line-height: 1.15;
+}
+
+.lede {
+  margin: 0;
+  max-width: 46ch;
+  color: var(--color-black);
+}
+
+/* ---------- Form ---------- */
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.field label {
+  font-weight: 500;
+}
+
+.field-input {
+  position: relative;
+}
+
+textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 4.5rem;
+  padding: 0.75rem 3rem 0.75rem 0.875rem;
+  border: 1.5px solid var(--color-black);
+  border-radius: var(--radius);
+  font: inherit;
+  color: var(--color-black);
+  background: var(--color-white);
+}
+
+textarea::placeholder {
+  color: #6b6a6a;
+}
+
+.mic-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-black);
+  cursor: pointer;
+}
+
+.mic-btn svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.mic-btn:hover:not(:disabled) {
+  background: rgba(40, 39, 39, 0.08);
+}
+
+.mic-btn.is-listening {
+  color: var(--color-white);
+  background: var(--color-amethyst);
+}
+
+.mic-btn:disabled {
+  color: #a8a7a7;
+  cursor: not-allowed;
+}
+
+/* ---------- Buttons ---------- */
+.btn-primary {
+  align-self: flex-start;
+  padding: 0.85rem 1.75rem;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--color-black);
+  color: var(--color-white);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #3a3838;
+}
+
+.btn-primary:disabled {
+  cursor: progress;
+  opacity: 0.85;
+}
+
+.btn-primary.is-loading .btn-label {
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.btn-secondary {
+  padding: 0.6rem 1.1rem;
+  border: 1.5px solid var(--color-black);
+  border-radius: var(--radius);
+  background: var(--color-white);
+  color: var(--color-black);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.btn-secondary:hover {
+  background: rgba(40, 39, 39, 0.06);
+}
+
+/* ---------- Result card ---------- */
+/* Mirrors the reference Email Banner template's colour logic: a black card,
+   the statement in amethyst italic serif, labels/content in white. */
+.result-card {
+  position: relative;
+  margin-top: 2rem;
+  padding: 2rem;
+  background: var(--color-black);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.result-statement {
+  margin: 0 0 1.5rem;
+  font-family: var(--font-headline);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1.5rem;
+  line-height: 1.35;
+  color: var(--color-amethyst);
+}
+
+.result-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin: 0 0 1rem;
+  color: var(--color-white);
+}
+
+.result-item dt {
+  font-weight: 500;
+  font-size: 0.8rem;
+  text-transform: none;
+  letter-spacing: 0.03em;
+  color: var(--color-limelight);
+}
+
+.result-item dd {
+  margin: 0.15rem 0 0;
+  font-weight: 300;
+}
+
+.result-assumptions {
+  margin: 1.25rem 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+  color: var(--color-white);
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+.result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.75rem;
+}
+
+.result-actions .btn-secondary {
+  border-color: var(--color-white);
+  background: transparent;
+  color: var(--color-white);
+}
+
+.result-actions .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* ---------- Status / error messaging ---------- */
+.status-message {
+  margin-top: 1.25rem;
+  padding: 0.75rem 1rem;
+  border: 1.5px solid var(--color-black);
+  border-radius: var(--radius);
+  color: var(--color-black);
+  background: var(--color-white);
+}
+
+/* ---------- Footer ---------- */
+.site-footer {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(40, 39, 39, 0.15);
+  font-size: 0.85rem;
+  color: var(--color-black);
+}
+
+.site-footer p {
+  margin: 0;
+  max-width: 52ch;
+}
+
+/* ---------- Accessibility: focus states ---------- */
+a:focus-visible,
+button:focus-visible,
+textarea:focus-visible,
+input:focus-visible {
+  outline: 3px solid var(--color-amethyst);
+  outline-offset: 2px;
+}
+
+.result-actions :focus-visible {
+  outline: 3px solid var(--color-limelight);
+  outline-offset: 2px;
+}
+
+/* ---------- Accessibility: reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

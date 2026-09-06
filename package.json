@@ -1,0 +1,12 @@
+{
+  "name": "spot-the-opportunity",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Spot the Opportunity — a UEL Careers and Student Enterprise tool that turns a rough problem and idea into a narrow, testable problem statement.",
+  "scripts": {
+    "dev": "netlify dev"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  }
+}

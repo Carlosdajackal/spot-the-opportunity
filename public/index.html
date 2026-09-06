@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spot the Opportunity — UEL Careers and Student Enterprise</title>
+  <meta name="description" content="Describe your rough problem and idea. Spot the Opportunity turns it into one narrow, testable problem statement." />
+
+  <!--
+    Brand fonts per the UEL Careers and Student Enterprise "Enterprise"
+    guidelines are Signifier Medium/Italic (headline) and Founders Grotesk
+    Text Light/Medium (body) — commercial Klim Type Foundry faces, not
+    available on any CDN this project can reach without a licence.
+
+    SWAP-IN SPOT: if UEL/CaSE provides licensed webfont files, self-host them
+    under public/fonts/ and replace this Google Fonts link + the @font-face
+    block left commented in styles.css, then update the --font-headline and
+    --font-body variables there. Until then this uses Newsreader (headline
+    substitute) and Archivo (body substitute).
+  -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;500&family=Newsreader:ital,wght@0,500;1,500&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="bg-shapes" aria-hidden="true">
+    <svg class="shape shape-a" viewBox="0 0 200 260" preserveAspectRatio="none">
+      <polygon points="0,0 200,40 150,260 0,220" />
+    </svg>
+    <svg class="shape shape-b" viewBox="0 0 100 100" preserveAspectRatio="none">
+      <polygon points="0,20 100,0 80,100" />
+    </svg>
+  </div>
+
+  <div class="page">
+    <header class="site-header">
+      <p class="site-name">UEL Careers and Student Enterprise</p>
+      <h1>Spot the opportunity</h1>
+      <p class="lede">
+        Describe your rough problem and idea. We'll help you narrow it into one clear, testable problem statement.
+      </p>
+    </header>
+
+    <main>
+      <form id="sharpen-form" novalidate>
+        <div class="field">
+          <label for="problem">What problem do you think you're solving?</label>
+          <div class="field-input">
+            <textarea id="problem" name="problem" rows="3" maxlength="1200" required></textarea>
+            <button type="button" class="mic-btn" data-target="problem" aria-label="Use voice input for this field">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z" />
+                <path d="M19 11a7 7 0 0 1-14 0" />
+                <line x1="12" y1="18" x2="12" y2="22" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="idea">What are you building? (your idea or solution)</label>
+          <div class="field-input">
+            <textarea id="idea" name="idea" rows="3" maxlength="1200" required></textarea>
+            <button type="button" class="mic-btn" data-target="idea" aria-label="Use voice input for this field">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z" />
+                <path d="M19 11a7 7 0 0 1-14 0" />
+                <line x1="12" y1="18" x2="12" y2="22" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" id="submit-btn" class="btn-primary">
+          <span class="btn-label">Sharpen my problem statement</span>
+        </button>
+      </form>
+
+      <section id="result" class="result-card" hidden>
+        <p class="result-statement" id="result-statement"></p>
+
+        <dl class="result-grid">
+          <div class="result-item">
+            <dt>Who</dt>
+            <dd id="result-who"></dd>
+          </div>
+          <div class="result-item">
+            <dt>What</dt>
+            <dd id="result-what"></dd>
+          </div>
+          <div class="result-item">
+            <dt>When</dt>
+            <dd id="result-when"></dd>
+          </div>
+          <div class="result-item">
+            <dt>How</dt>
+            <dd id="result-how"></dd>
+          </div>
+          <div class="result-item">
+            <dt>Why</dt>
+            <dd id="result-why"></dd>
+          </div>
+        </dl>
+
+        <p id="result-assumptions" class="result-assumptions" hidden></p>
+
+        <div class="result-actions">
+          <button type="button" id="copy-btn" class="btn-secondary">Copy</button>
+          <button type="button" id="retry-btn" class="btn-secondary">Try again</button>
+          <button type="button" id="reset-btn" class="btn-secondary">Start over</button>
+        </div>
+      </section>
+
+      <p id="status-message" class="status-message" role="alert" hidden></p>
+    </main>
+
+    <footer class="site-footer">
+      <p>Nothing you type here is saved. Your answers are used once to generate this statement and are not stored.</p>
+    </footer>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
