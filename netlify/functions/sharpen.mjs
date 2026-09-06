@@ -162,6 +162,11 @@ async function callAnthropic(apiKey, problem, idea) {
       model: MODEL,
       max_tokens: MAX_TOKENS,
       system: SYSTEM_PROMPT,
+      // Sonnet 5 runs adaptive thinking by default even when this is
+      // omitted, which (a) prepends a "thinking" content block before the
+      // answer and (b) eats into max_tokens. Neither is useful for a fixed-
+      // format JSON answer, so it's switched off explicitly.
+      thinking: { type: "disabled" },
       messages: [{ role: "user", content: userMessage }],
     }),
   });
@@ -171,7 +176,10 @@ async function callAnthropic(apiKey, problem, idea) {
   }
 
   const data = await response.json();
-  const raw = data?.content?.[0]?.text ?? "";
+  // Don't assume content[0] is the answer — a thinking block (or anything
+  // else) could precede it. Find the first actual text block instead.
+  const textBlock = Array.isArray(data?.content) ? data.content.find((block) => block?.type === "text") : null;
+  const raw = textBlock?.text ?? "";
 
   let parsed;
   try {
