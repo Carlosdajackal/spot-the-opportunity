@@ -1,23 +1,26 @@
-// netlify/functions/test.mjs — Stage 3: Test (online validation).
+// netlify/functions/test-background.mjs — Stage 3: Test (online validation).
 //
-// Uses Anthropic's server-side web search tool to find real public
-// discussion of the student's problem. See spot.mjs for the shared
-// architecture notes (no secrets client-side, no data stored, etc).
+// This is a Netlify BACKGROUND function (note the -background suffix,
+// which is what makes it one — the exported `path` below still maps the
+// externally-visible URL to /api/test). It exists because a web-search-
+// backed validation with synthesis routinely takes well over Netlify's
+// ~30s synchronous function limit; a background function gets a 15-minute
+// ceiling instead. The tradeoff is that callers can't get a response body
+// back directly — the client kicks this off, then polls test-status.mjs
+// (which reads the same Netlify Blobs job record) until it's done. See
+// app.js's runTest()/pollTestJob() for the client side of this.
+//
+// Server-side only — see spot.mjs for the shared architecture notes (no
+// secrets client-side, no data stored beyond the transient job record
+// below, etc).
 
+import { getStore } from "@netlify/blobs";
 import { callClaudeForJSON } from "./lib/anthropic.mjs";
 import { checkAndReserveRateLimit } from "./lib/rate-limit.mjs";
-import {
-  badRequestResponse,
-  cleanInput,
-  getSessionId,
-  jsonResponse,
-  methodNotAllowedResponse,
-  notConfiguredResponse,
-  rateLimitedResponse,
-  upstreamErrorResponse,
-} from "./lib/http.mjs";
+import { cleanInput, getSessionId } from "./lib/http.mjs";
 
 const MAX_TOKENS = 3000;
+const JOB_STORE = "test-jobs";
 
 const SYSTEM_PROMPT = `You are a market research analyst helping a UK university entrepreneurship student validate whether a problem is real and urgent, by finding what real people say about it in public online discussions.
 
@@ -40,21 +43,20 @@ Return ONLY a single valid JSON object, no markdown fences:
 priority_ranking ranks pain points by frequency, intensity, specificity and solvability. sharpening_advice is an empty array when the score is 60 or above.`;
 
 export default async (req, context) => {
-  if (req.method !== "POST") {
-    return methodNotAllowedResponse();
-  }
-
-  const apiKey = Netlify.env.get("ANTHROPIC_API_KEY");
-  if (!apiKey) {
-    return notConfiguredResponse();
-  }
+  if (req.method !== "POST") return;
 
   let body;
   try {
     body = await req.json();
   } catch {
-    return badRequestResponse("Couldn't read your answers. Please try again.");
+    return; // no jobId to report failure against
   }
+
+  const jobId = typeof body?.jobId === "string" ? body.jobId.replace(/[^a-zA-Z0-9-]/g, "").slice(0, 64) : "";
+  if (!jobId) return;
+
+  const store = getStore(JOB_STORE);
+  await store.setJSON(jobId, { status: "pending" });
 
   const statement = cleanInput(body?.statement);
   const who = cleanInput(body?.who);
@@ -65,12 +67,26 @@ export default async (req, context) => {
   const rootCause = cleanInput(body?.rootCause);
 
   if (!statement || !who || !what || !rootCause) {
-    return badRequestResponse("Missing results from earlier stages — please complete Spot and Dig first.");
+    await store.setJSON(jobId, {
+      status: "error",
+      message: "Missing results from earlier stages — please complete Spot and Dig first.",
+    });
+    return;
+  }
+
+  const apiKey = Netlify.env.get("ANTHROPIC_API_KEY");
+  if (!apiKey) {
+    await store.setJSON(jobId, {
+      status: "error",
+      message: "Spot the Opportunity isn't switched on yet — the site owner still needs to add an API key.",
+    });
+    return;
   }
 
   const rateCheck = await checkAndReserveRateLimit({ ip: context.ip, sessionId: getSessionId(req) });
   if (!rateCheck.allowed) {
-    return rateLimitedResponse(rateCheck.message);
+    await store.setJSON(jobId, { status: "error", message: rateCheck.message });
+    return;
   }
 
   const userMessage = [
@@ -94,9 +110,12 @@ export default async (req, context) => {
       tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 6 }],
     });
 
-    return jsonResponse(sanitizeResult(parsed, rootCause), 200);
+    await store.setJSON(jobId, { status: "done", result: sanitizeResult(parsed, rootCause) });
   } catch {
-    return upstreamErrorResponse("Something went wrong testing your problem. Please try again.");
+    await store.setJSON(jobId, {
+      status: "error",
+      message: "Something went wrong testing your problem. Please try again.",
+    });
   }
 };
 

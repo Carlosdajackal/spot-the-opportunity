@@ -391,6 +391,14 @@
   const TEST_IDLE_LABEL = "Test this against real conversations";
   const TEST_LOADING_LABEL = "Searching real conversations";
 
+  // A web-search-backed validation with synthesis routinely takes longer
+  // than Netlify's ~30s synchronous function limit, so /api/test is a
+  // background function: this kicks off the job, then polls
+  // /api/test-status (a fast, separate endpoint) until it's done. See
+  // netlify/functions/test-background.mjs and test-status.mjs.
+  const TEST_POLL_INTERVAL_MS = 2000;
+  const TEST_POLL_MAX_MS = 120000; // generous ceiling for a multi-search lookup
+
   testRunBtn.addEventListener("click", runTest);
 
   async function runTest() {
@@ -403,31 +411,68 @@
     setButtonLoading(testRunBtn, true, TEST_LOADING_LABEL, TEST_IDLE_LABEL);
 
     const spot = state.spot.result;
-    const result = await callApi("/api/test", {
-      statement: spot.statement,
-      who: spot.who,
-      what: spot.what,
-      when: spot.when,
-      how: spot.how,
-      why: spot.why,
-      rootCause: state.dig.result.root_cause,
-    });
+    const jobId = window.crypto && crypto.randomUUID ? crypto.randomUUID() : randomFallbackId();
 
-    setButtonLoading(testRunBtn, false, TEST_LOADING_LABEL, TEST_IDLE_LABEL);
-
-    if (!result.ok) {
-      showStatus(testStatus, result.message);
+    try {
+      await fetch("/api/test", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-session-id": SESSION_ID },
+        body: JSON.stringify({
+          jobId,
+          statement: spot.statement,
+          who: spot.who,
+          what: spot.what,
+          when: spot.when,
+          how: spot.how,
+          why: spot.why,
+          rootCause: state.dig.result.root_cause,
+        }),
+      });
+    } catch {
+      setButtonLoading(testRunBtn, false, TEST_LOADING_LABEL, TEST_IDLE_LABEL);
+      showStatus(testStatus, "Couldn't reach the server. Please check your connection and try again.");
       return;
     }
 
-    state.test = { result: result.data };
-    renderTestResult(result.data);
+    const outcome = await pollTestJob(jobId);
+    setButtonLoading(testRunBtn, false, TEST_LOADING_LABEL, TEST_IDLE_LABEL);
+
+    if (!outcome.ok) {
+      showStatus(testStatus, outcome.message);
+      return;
+    }
+
+    state.test = { result: outcome.data };
+    renderTestResult(outcome.data);
 
     setNavState("test", "complete");
     if (document.getElementById("stage-judge").hidden) {
       unlockStage("judge", "Stage 4: Judge");
     }
     renderJudgeSummary();
+  }
+
+  async function pollTestJob(jobId) {
+    const deadline = Date.now() + TEST_POLL_MAX_MS;
+    while (Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, TEST_POLL_INTERVAL_MS));
+      try {
+        const response = await fetch(`/api/test-status?id=${encodeURIComponent(jobId)}`, {
+          headers: { "x-session-id": SESSION_ID },
+        });
+        const data = await response.json().catch(() => null);
+        if (data && data.status === "done") {
+          return { ok: true, data: data.result };
+        }
+        if (data && data.status === "error") {
+          return { ok: false, message: data.message || "Something went wrong. Please try again." };
+        }
+        // status "pending" (or an unreadable response) — keep polling.
+      } catch {
+        // Transient network hiccup — keep polling until the deadline.
+      }
+    }
+    return { ok: false, message: "This is taking longer than expected. Please try again in a moment." };
   }
 
   function renderTestResult(data) {

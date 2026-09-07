@@ -23,13 +23,21 @@ Students work through four stages:
 
 - `public/index.html` (+ `styles.css`, `app.js`) — the page students see.
   Contains no secrets and never talks to Anthropic directly.
-- `netlify/functions/spot.mjs`, `dig.mjs`, `test.mjs` — three Netlify
-  serverless functions, one per stage. Each holds the Anthropic API key
-  server-side (`Netlify.env.get("ANTHROPIC_API_KEY")`) and returns only the
-  finished result to the browser, at `/api/spot`, `/api/dig`, and
-  `/api/test` respectively.
-- `netlify/functions/lib/` — shared code used by all three: the Anthropic
-  API caller, rate limiting, and small HTTP helpers.
+- `netlify/functions/spot.mjs`, `dig.mjs` — two ordinary Netlify serverless
+  functions. Each holds the Anthropic API key server-side
+  (`Netlify.env.get("ANTHROPIC_API_KEY")`) and returns the finished result
+  directly to the browser, at `/api/spot` and `/api/dig`.
+- `netlify/functions/test-background.mjs` + `test-status.mjs` — Stage 3 is
+  different: a web-search-backed validation with synthesis routinely takes
+  longer than Netlify's ~30-second synchronous function limit. So
+  `test-background.mjs` is a **background function** (15-minute ceiling)
+  that does the work and writes its result into a short-lived Netlify Blobs
+  job record; `test-status.mjs` is a fast endpoint the browser polls every
+  couple of seconds until that job reads "done" or "error". Both are still
+  reached at `/api/test` and `/api/test-status` — the browser never talks
+  to Anthropic directly, same as the other two stages.
+- `netlify/functions/lib/` — shared code used across functions: the
+  Anthropic API caller, rate limiting, and small HTTP helpers.
 
 The browser can only ever reach this site's own `/api/*` endpoints — the
 API key never appears in any client-side file.
@@ -79,9 +87,14 @@ than continuing to spend.
 
 Nothing a student types is logged, saved, or persisted. Their answers are
 sent once per stage to generate a result and are not written anywhere —
-not to Netlify Blobs, not to a log, not to a database. (The only thing
-stored is small numeric rate-limit counters — never the submitted text or
-generated output.)
+not to Netlify Blobs, not to a log, not to a database. Two things are
+stored only transiently, and only as an implementation detail of talking
+to a serverless backend, never as a record kept on purpose:
+
+- Small numeric rate-limit counters (never the submitted text or output).
+- Stage 3's job record (`test-background.mjs` / `test-status.mjs`) —
+  holds that one generation's result just long enough for the browser to
+  poll and collect it, then deletes it immediately on retrieval.
 
 ## Local development
 
