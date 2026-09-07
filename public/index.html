@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Spot the Opportunity — UEL Careers and Student Enterprise</title>
-  <meta name="description" content="Describe your rough problem and idea. Spot the Opportunity turns it into one narrow, testable problem statement." />
+  <meta name="description" content="Spot a problem, dig to its root cause, test it against real online conversations, then judge whether it's worth building for." />
 
   <!--
     Brand fonts per the UEL Careers and Student Enterprise "Enterprise"
@@ -42,85 +42,283 @@
       <p class="site-name">UEL Careers and Student Enterprise</p>
       <h1>Spot the opportunity</h1>
       <p class="lede">
-        Describe your rough problem and idea. We'll help you narrow it into one clear, testable problem statement.
+        Good entrepreneurs learn to spot problems clearly, test them effectively, and focus on the ones that
+        matter. Work through four stages: Spot, Dig, Test, Judge.
       </p>
     </header>
 
+    <!-- Stage indicator. Screen-reader announcements for stage unlocks live in #stage-announcer. -->
+    <nav class="stage-nav" aria-label="Stages">
+      <ol>
+        <li class="stage-nav-item is-current" data-stage-nav="spot"><span class="stage-nav-num">1</span> Spot</li>
+        <li class="stage-nav-item is-locked" data-stage-nav="dig"><span class="stage-nav-num">2</span> Dig</li>
+        <li class="stage-nav-item is-locked" data-stage-nav="test"><span class="stage-nav-num">3</span> Test</li>
+        <li class="stage-nav-item is-locked" data-stage-nav="judge"><span class="stage-nav-num">4</span> Judge</li>
+      </ol>
+    </nav>
+    <p id="stage-announcer" class="visually-hidden" role="status" aria-live="polite"></p>
+
     <main>
-      <form id="sharpen-form" novalidate>
-        <div class="field">
-          <label for="problem">What problem do you think you're solving?</label>
-          <div class="field-input">
-            <textarea id="problem" name="problem" rows="3" maxlength="1200" required></textarea>
-            <button type="button" class="mic-btn" data-target="problem" aria-label="Use voice input for this field">
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z" />
-                <path d="M19 11a7 7 0 0 1-14 0" />
-                <line x1="12" y1="18" x2="12" y2="22" />
-              </svg>
-            </button>
-          </div>
-        </div>
+      <!-- ================= STAGE 1 — SPOT ================= -->
+      <section class="stage" id="stage-spot" data-stage="spot">
+        <h2 class="stage-heading"><span class="stage-heading-num">1</span> Spot</h2>
 
-        <div class="field">
-          <label for="idea">What are you building? (your idea or solution)</label>
-          <div class="field-input">
-            <textarea id="idea" name="idea" rows="3" maxlength="1200" required></textarea>
-            <button type="button" class="mic-btn" data-target="idea" aria-label="Use voice input for this field">
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z" />
-                <path d="M19 11a7 7 0 0 1-14 0" />
-                <line x1="12" y1="18" x2="12" y2="22" />
-              </svg>
-            </button>
+        <form id="spot-form" novalidate>
+          <div class="field">
+            <label for="problem">What problem do you think you're solving?</label>
+            <div class="field-input">
+              <textarea id="problem" name="problem" rows="3" maxlength="1200" required></textarea>
+              <button type="button" class="mic-btn" data-target="problem" aria-label="Use voice input for this field">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z" />
+                  <path d="M19 11a7 7 0 0 1-14 0" />
+                  <line x1="12" y1="18" x2="12" y2="22" />
+                </svg>
+              </button>
+            </div>
           </div>
-        </div>
 
-        <button type="submit" id="submit-btn" class="btn-primary">
-          <span class="btn-label">Sharpen my problem statement</span>
-        </button>
-      </form>
+          <div class="field">
+            <label for="idea">What are you building? (your idea or solution)</label>
+            <div class="field-input">
+              <textarea id="idea" name="idea" rows="3" maxlength="1200" required></textarea>
+              <button type="button" class="mic-btn" data-target="idea" aria-label="Use voice input for this field">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z" />
+                  <path d="M19 11a7 7 0 0 1-14 0" />
+                  <line x1="12" y1="18" x2="12" y2="22" />
+                </svg>
+              </button>
+            </div>
+          </div>
 
-      <section id="result" class="result-card" hidden>
-        <p class="result-statement" id="result-statement"></p>
+          <button type="submit" id="spot-submit-btn" class="btn-primary">
+            <span class="btn-label">Sharpen my problem statement</span>
+          </button>
+        </form>
 
-        <dl class="result-grid">
-          <div class="result-item">
-            <dt>Who</dt>
-            <dd id="result-who"></dd>
-          </div>
-          <div class="result-item">
-            <dt>What</dt>
-            <dd id="result-what"></dd>
-          </div>
-          <div class="result-item">
-            <dt>When</dt>
-            <dd id="result-when"></dd>
-          </div>
-          <div class="result-item">
-            <dt>How</dt>
-            <dd id="result-how"></dd>
-          </div>
-          <div class="result-item">
-            <dt>Why</dt>
-            <dd id="result-why"></dd>
-          </div>
-        </dl>
+        <section id="spot-result" class="result-card" hidden>
+          <p class="result-statement" id="spot-result-statement"></p>
 
-        <p id="result-assumptions" class="result-assumptions" hidden></p>
+          <dl class="result-grid">
+            <div class="result-item"><dt>Who</dt><dd id="spot-result-who"></dd></div>
+            <div class="result-item"><dt>What</dt><dd id="spot-result-what"></dd></div>
+            <div class="result-item"><dt>When</dt><dd id="spot-result-when"></dd></div>
+            <div class="result-item"><dt>How</dt><dd id="spot-result-how"></dd></div>
+            <div class="result-item"><dt>Why</dt><dd id="spot-result-why"></dd></div>
+          </dl>
 
-        <div class="result-actions">
-          <button type="button" id="copy-btn" class="btn-secondary">Copy</button>
-          <button type="button" id="retry-btn" class="btn-secondary">Try again</button>
-          <button type="button" id="reset-btn" class="btn-secondary">Start over</button>
-        </div>
+          <p id="spot-result-assumptions" class="result-assumptions" hidden></p>
+
+          <div class="result-actions">
+            <button type="button" id="spot-copy-btn" class="btn-secondary">Copy</button>
+            <button type="button" id="spot-retry-btn" class="btn-secondary">Try again</button>
+            <button type="button" id="spot-reset-btn" class="btn-secondary">Start over</button>
+          </div>
+        </section>
+
+        <p id="spot-status" class="status-message" role="alert" hidden></p>
       </section>
 
-      <p id="status-message" class="status-message" role="alert" hidden></p>
+      <!-- ================= STAGE 2 — DIG ================= -->
+      <section class="stage is-locked" id="stage-dig" data-stage="dig" hidden>
+        <h2 class="stage-heading"><span class="stage-heading-num">2</span> Dig</h2>
+        <p class="stage-intro">
+          A surface problem is often just a symptom. To understand the root cause, you need to dig deeper. This is
+          the <strong>Five Whys</strong> technique, which comes from Toyota's manufacturing process.
+        </p>
+
+        <button type="button" id="dig-example-toggle" class="link-btn">Stuck? Show me an example chain</button>
+        <div id="dig-example" class="example-block" hidden>
+          <p class="example-label">Example from a different business — not generated from your answers:</p>
+          <p class="example-statement">
+            "Independent fashion brands struggle to produce and sell clothing sustainably while keeping prices
+            affordable for everyday consumers."
+          </p>
+          <ol class="example-whys">
+            <li>Sustainable materials and ethical suppliers cost significantly more than fast-fashion alternatives.</li>
+            <li>Small brands can't get the bulk-order discounts that large fashion retailers use to offset that cost.</li>
+            <li>They don't have the order volume, because they're small and reaching a limited customer base.</li>
+            <li>Customers who care about sustainability still compare prices against cheap fast fashion and hesitate.</li>
+            <li>There's no accepted price norm yet for "affordable sustainable" clothing, so every brand is guessing alone.</li>
+          </ol>
+        </div>
+
+        <form id="dig-form" novalidate>
+          <div class="why-item" data-why="1">
+            <label for="why-1">Why 1 — Why does this happen?</label>
+            <div class="field-input">
+              <textarea id="why-1" rows="2" maxlength="1200" required></textarea>
+              <button type="button" class="mic-btn" data-target="why-1" aria-label="Use voice input for this field">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z" />
+                  <path d="M19 11a7 7 0 0 1-14 0" />
+                  <line x1="12" y1="18" x2="12" y2="22" />
+                </svg>
+              </button>
+            </div>
+            <button type="button" class="btn-secondary why-next-btn" data-why="1">Next</button>
+          </div>
+
+          <div class="why-item" data-why="2" hidden>
+            <p class="why-context" id="why-context-2"></p>
+            <label for="why-2">Why 2 — Why does that happen?</label>
+            <div class="field-input">
+              <textarea id="why-2" rows="2" maxlength="1200" required></textarea>
+              <button type="button" class="mic-btn" data-target="why-2" aria-label="Use voice input for this field">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z" />
+                  <path d="M19 11a7 7 0 0 1-14 0" />
+                  <line x1="12" y1="18" x2="12" y2="22" />
+                </svg>
+              </button>
+            </div>
+            <button type="button" class="btn-secondary why-next-btn" data-why="2">Next</button>
+          </div>
+
+          <div class="why-item" data-why="3" hidden>
+            <p class="why-context" id="why-context-3"></p>
+            <label for="why-3">Why 3 — Why does that happen?</label>
+            <div class="field-input">
+              <textarea id="why-3" rows="2" maxlength="1200" required></textarea>
+              <button type="button" class="mic-btn" data-target="why-3" aria-label="Use voice input for this field">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z" />
+                  <path d="M19 11a7 7 0 0 1-14 0" />
+                  <line x1="12" y1="18" x2="12" y2="22" />
+                </svg>
+              </button>
+            </div>
+            <button type="button" class="btn-secondary why-next-btn" data-why="3">Next</button>
+          </div>
+
+          <div class="why-item" data-why="4" hidden>
+            <p class="why-context" id="why-context-4"></p>
+            <label for="why-4">Why 4 — Why does that happen?</label>
+            <div class="field-input">
+              <textarea id="why-4" rows="2" maxlength="1200" required></textarea>
+              <button type="button" class="mic-btn" data-target="why-4" aria-label="Use voice input for this field">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z" />
+                  <path d="M19 11a7 7 0 0 1-14 0" />
+                  <line x1="12" y1="18" x2="12" y2="22" />
+                </svg>
+              </button>
+            </div>
+            <button type="button" class="btn-secondary why-next-btn" data-why="4">Next</button>
+          </div>
+
+          <div class="why-item" data-why="5" hidden>
+            <p class="why-context" id="why-context-5"></p>
+            <label for="why-5">Why 5 — Why does that happen?</label>
+            <div class="field-input">
+              <textarea id="why-5" rows="2" maxlength="1200" required></textarea>
+              <button type="button" class="mic-btn" data-target="why-5" aria-label="Use voice input for this field">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z" />
+                  <path d="M19 11a7 7 0 0 1-14 0" />
+                  <line x1="12" y1="18" x2="12" y2="22" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" id="dig-submit-btn" class="btn-primary" hidden>
+            <span class="btn-label">Review my thinking</span>
+          </button>
+        </form>
+
+        <section id="dig-result" class="result-card" hidden>
+          <p class="dig-strength-badge" id="dig-strength"></p>
+          <p class="dig-root-cause-label">Your chain's root cause</p>
+          <p class="dig-root-cause" id="dig-root-cause"></p>
+
+          <ul class="dig-feedback" id="dig-feedback"></ul>
+
+          <p id="dig-deeper-prompt" class="dig-deeper-prompt" hidden></p>
+
+          <div class="result-actions">
+            <button type="button" id="dig-recheck-btn" class="btn-secondary">Re-check my answers</button>
+          </div>
+        </section>
+
+        <p id="dig-status" class="status-message" role="alert" hidden></p>
+      </section>
+
+      <!-- ================= STAGE 3 — TEST ================= -->
+      <section class="stage is-locked" id="stage-test" data-stage="test" hidden>
+        <h2 class="stage-heading"><span class="stage-heading-num">3</span> Test</h2>
+        <p class="stage-intro">
+          This checks whether real people express this problem online, and how painfully — so you're testing
+          against reality, not just your own instinct.
+        </p>
+
+        <button type="button" id="test-run-btn" class="btn-primary">
+          <span class="btn-label">Test this against real conversations</span>
+        </button>
+
+        <section id="test-result" class="test-result" hidden>
+          <div class="verdict-card" id="test-verdict-card">
+            <p class="verdict-label">
+              <span id="test-verdict-word"></span> · <span id="test-verdict-score"></span>/100
+              <span
+                class="tooltip"
+                tabindex="0"
+                aria-label="Some course materials call this a 'pill vs vitamin' judgment instead — a migraine needs a pill urgently, a headache just needs a vitamin. Same idea."
+                >ⓘ</span
+              >
+            </p>
+            <p class="verdict-reasoning" id="test-verdict-reasoning"></p>
+          </div>
+
+          <div id="test-sharpening" class="test-sharpening" hidden>
+            <strong>Sharpening advice:</strong>
+            <ul id="test-sharpening-list"></ul>
+          </div>
+
+          <h3>Root cause check</h3>
+          <p class="test-comparison-verdict" id="test-comparison-verdict"></p>
+          <p id="test-comparison-explanation"></p>
+
+          <h3>What real people are saying</h3>
+          <p class="quotes-caveat">
+            These quotes come from real posts. Click through and read them in context before you rely on them.
+          </p>
+          <div id="test-pain-points"></div>
+
+          <h3>Priority ranking</h3>
+          <ol id="test-priority-ranking" class="priority-ranking"></ol>
+
+          <p id="test-evidence-note" class="test-evidence-note" hidden></p>
+        </section>
+
+        <p id="test-status" class="status-message" role="alert" hidden></p>
+      </section>
+
+      <!-- ================= STAGE 4 — JUDGE ================= -->
+      <section class="stage is-locked" id="stage-judge" data-stage="judge" hidden>
+        <h2 class="stage-heading"><span class="stage-heading-num">4</span> Judge</h2>
+        <p class="stage-intro">Here's everything you've found, brought together.</p>
+
+        <div class="judge-summary" id="judge-summary"></div>
+
+        <div class="field">
+          <label for="judge-conclusion">Your conclusion</label>
+          <textarea id="judge-conclusion" rows="4"></textarea>
+          <p id="judge-conclusion-print" class="print-only"></p>
+        </div>
+
+        <div class="result-actions">
+          <button type="button" id="judge-copy-btn" class="btn-secondary">Copy</button>
+          <button type="button" id="judge-print-btn" class="btn-secondary">Print / Save as PDF</button>
+        </div>
+
+        <p id="judge-status" class="status-message" role="alert" hidden></p>
+      </section>
     </main>
 
     <footer class="site-footer">
-      <p>Nothing you type here is saved. Your answers are used once to generate this statement and are not stored.</p>
+      <p>Nothing you type here is saved. Your answers are used once to generate each stage's result and are not stored.</p>
     </footer>
   </div>
 
