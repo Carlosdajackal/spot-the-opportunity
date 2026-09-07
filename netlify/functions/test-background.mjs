@@ -19,7 +19,17 @@ import { callClaudeForJSON } from "./lib/anthropic.mjs";
 import { checkAndReserveRateLimit } from "./lib/rate-limit.mjs";
 import { cleanInput, getSessionId } from "./lib/http.mjs";
 
-const MAX_TOKENS = 3000;
+// NOTE on max_tokens: the brief specified 3000. Confirmed in production
+// that this is too small — every one of up to 6 search rounds emits its
+// own tool_use block (and often a short narration block) that counts
+// against the same output budget as the final synthesis, so the response
+// was hitting max_tokens and getting cut off before ever reaching the
+// closing JSON (stop_reason: "max_tokens", verified via temporary debug
+// logging against the live endpoint). Raised to give the full search +
+// synthesis room to complete; cost is bounded by actual usage, not this
+// ceiling, and this now runs as a background function so generation time
+// is no longer the constraint token budget was.
+const MAX_TOKENS = 8000;
 const JOB_STORE = "test-jobs";
 
 const SYSTEM_PROMPT = `You are a market research analyst helping a UK university entrepreneurship student validate whether a problem is real and urgent, by finding what real people say about it in public online discussions.
@@ -111,15 +121,10 @@ export default async (req, context) => {
     });
 
     await store.setJSON(jobId, { status: "done", result: sanitizeResult(parsed, rootCause) });
-  } catch (err) {
-    // TEMPORARY: surfaces the exception message (never user content — just
-    // things like "Anthropic API error 400" or a parse-failure note) to
-    // speed up diagnosing a production-only failure. Remove debug once
-    // confirmed working.
+  } catch {
     await store.setJSON(jobId, {
       status: "error",
       message: "Something went wrong testing your problem. Please try again.",
-      debug: err && err.message ? String(err.message) : String(err),
     });
   }
 };

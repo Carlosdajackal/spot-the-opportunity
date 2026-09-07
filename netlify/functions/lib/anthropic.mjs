@@ -58,16 +58,7 @@ export async function callClaudeForJSON({ apiKey, maxTokens, system, messages, t
   }
 
   const data = await response.json();
-  try {
-    return extractJSON(data);
-  } catch (err) {
-    // TEMPORARY: attach stop_reason/content-shape context to a production-
-    // only parse failure so the cause (e.g. hitting max_tokens mid-search)
-    // is visible without log access. Remove once confirmed.
-    const shape = Array.isArray(data?.content) ? data.content.map((b) => b?.type) : data?.content;
-    err.message = `${err.message} | stop_reason=${data?.stop_reason} content=${JSON.stringify(shape)}`;
-    throw err;
-  }
+  return extractJSON(data);
 }
 
 // Pulls the model's JSON answer out of the response. Doesn't assume the
