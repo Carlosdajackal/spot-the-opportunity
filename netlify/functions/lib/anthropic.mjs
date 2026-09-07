@@ -63,25 +63,82 @@ export async function callClaudeForJSON({ apiKey, maxTokens, system, messages, t
 
 // Pulls the model's JSON answer out of the response. Doesn't assume the
 // answer is content[0] or the only text block — with tools enabled (web
-// search) the content array can interleave tool_use/tool_result blocks
-// with the model's own text, and even without tools a stray block could
-// precede the answer. Concatenating every text block and then slicing from
-// the first "{" to the last "}" is robust to both stray leading blocks and
-// the model narrating briefly before its final JSON.
+// search) the content array interleaves tool_use/tool_result blocks with
+// the model's own text, and the model may narrate briefly between
+// searches before its final JSON. A naive "first { to last }" slice across
+// all concatenated text breaks the moment any of that narration contains
+// its own brace (e.g. mentioning a literal '{' or just an unlucky curly
+// quote), since it swallows everything in between as if it were one
+// object. Instead, scan each text block for a properly *balanced* JSON
+// object — tracking nesting depth and skipping over string contents — and
+// try each candidate in turn.
 function extractJSON(data) {
   const textBlocks = Array.isArray(data?.content)
-    ? data.content
-        .filter((block) => block?.type === "text")
-        .map((block) => block.text)
-        .join("\n")
-    : "";
+    ? data.content.filter((block) => block?.type === "text").map((block) => block.text)
+    : [];
 
-  const match = textBlocks.match(/\{[\s\S]*\}/);
-  const raw = match ? match[0] : textBlocks;
-
-  try {
-    return JSON.parse(raw);
-  } catch {
-    throw new Error("Could not parse model response as JSON");
+  for (const text of textBlocks) {
+    const candidate = extractBalancedJSONObject(text);
+    if (candidate) {
+      try {
+        return JSON.parse(candidate);
+      } catch {
+        // Keep looking — maybe a later block has the real one.
+      }
+    }
   }
+
+  // Fall back to treating the whole reply as one string, in case the JSON
+  // was itself split across adjacent text blocks.
+  const joined = textBlocks.join("");
+  const candidate = extractBalancedJSONObject(joined);
+  if (candidate) {
+    try {
+      return JSON.parse(candidate);
+    } catch {
+      // fall through to the error below
+    }
+  }
+
+  throw new Error("Could not parse model response as JSON");
+}
+
+// Returns the substring of the first balanced {...} object in `text`, or
+// null if none closes properly. Correctly skips braces that appear inside
+// JSON string values.
+function extractBalancedJSONObject(text) {
+  const start = text.indexOf("{");
+  if (start === -1) return null;
+
+  let depth = 0;
+  let inString = false;
+  let escapeNext = false;
+
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i];
+
+    if (inString) {
+      if (escapeNext) {
+        escapeNext = false;
+      } else if (ch === "\\") {
+        escapeNext = true;
+      } else if (ch === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (ch === '"') {
+      inString = true;
+    } else if (ch === "{") {
+      depth++;
+    } else if (ch === "}") {
+      depth--;
+      if (depth === 0) {
+        return text.slice(start, i + 1);
+      }
+    }
+  }
+
+  return null;
 }

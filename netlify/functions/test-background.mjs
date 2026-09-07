@@ -111,10 +111,15 @@ export default async (req, context) => {
     });
 
     await store.setJSON(jobId, { status: "done", result: sanitizeResult(parsed, rootCause) });
-  } catch {
+  } catch (err) {
+    // TEMPORARY: surfaces the exception message (never user content — just
+    // things like "Anthropic API error 400" or a parse-failure note) to
+    // speed up diagnosing a production-only failure. Remove debug once
+    // confirmed working.
     await store.setJSON(jobId, {
       status: "error",
       message: "Something went wrong testing your problem. Please try again.",
+      debug: err && err.message ? String(err.message) : String(err),
     });
   }
 };
