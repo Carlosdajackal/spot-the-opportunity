@@ -535,6 +535,34 @@ textarea::placeholder {
   margin-top: 0.75rem;
 }
 
+.nudge-btn {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.nudge-panel {
+  margin-top: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: 1.5px dashed var(--color-amethyst);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+}
+
+.nudge-aim {
+  margin: 0 0 0.5rem;
+  font-weight: 500;
+}
+
+.nudge-list {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.nudge-list li {
+  margin-bottom: 0.35rem;
+}
+
 #dig-form textarea {
   min-height: 3.5rem;
 }

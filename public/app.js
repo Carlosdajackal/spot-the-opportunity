@@ -279,6 +279,104 @@
     block.hidden = !block.hidden;
   });
 
+  // Nudge questions: preloaded, no API call. Questions only — never an
+  // answer — so the student still does the thinking. Edit wording here.
+  // `lead` (Why 2-5) quotes the student's previous answer back to them;
+  // `{prev}` is replaced with a shortened copy of it.
+  const NUDGES = {
+    1: {
+      aim: "Describe what actually happens, in plain terms.",
+      questions: [
+        "Who is affected, and what are they trying to do at the moment it goes wrong?",
+        "What do they do instead today to cope or work around it?",
+        "When did you last see this happen, or hear someone describe it?",
+        "What is the first thing that goes wrong, before anything else?",
+      ],
+    },
+    2: {
+      aim: "Find the direct cause of what you wrote in Why 1.",
+      lead: "You said “{prev}”. What is the immediate trigger that makes that happen?",
+      questions: [
+        "Is something missing: a tool, information, time or money?",
+        "Is it a habit, a skill gap, or a choice people make?",
+        "Would this still happen if the people involved were trying their hardest?",
+      ],
+    },
+    3: {
+      aim: "Look underneath the cause you just gave.",
+      lead: "You said “{prev}”. What sits behind that?",
+      questions: [
+        "Why hasn’t this already been fixed?",
+        "Who decided it works this way, and why might they have done so?",
+        "Is this true for everyone affected, or only some of them?",
+      ],
+    },
+    4: {
+      aim: "Look for the system, rule or incentive that keeps it going.",
+      lead: "You said “{prev}”. What keeps that in place?",
+      questions: [
+        "Is there a rule, cost, process or incentive that makes it hard to change?",
+        "Who benefits from things staying as they are?",
+        "Is this a one-off, or does it keep happening in similar situations?",
+      ],
+    },
+    5: {
+      aim: "Test whether you have reached a root cause.",
+      lead: "You said “{prev}”. If this were fixed, would your original problem stop?",
+      questions: [
+        "Is this a cause, or still a symptom of something deeper?",
+        "Is it something you know, or something you are assuming and would need to check?",
+        "Could you explain it to a stranger in one sentence?",
+      ],
+    },
+  };
+  // Shown on every Why: guards against the most common Five Whys failure.
+  const NUDGE_RESTATE_CHECK =
+    "Does your answer say something new, or just repeat the last one in different words?";
+  const NUDGE_PREV_MAX = 90;
+
+  function buildNudgePanel(idx) {
+    const panel = document.getElementById(`nudge-${idx}`);
+    const data = NUDGES[idx];
+    panel.textContent = "";
+
+    const aim = document.createElement("p");
+    aim.className = "nudge-aim";
+    aim.textContent = data.aim;
+    panel.appendChild(aim);
+
+    const list = document.createElement("ul");
+    list.className = "nudge-list";
+    const add = (text) => {
+      const li = document.createElement("li");
+      li.textContent = text;
+      list.appendChild(li);
+    };
+
+    if (data.lead) {
+      const prevField = document.getElementById(`why-${idx - 1}`);
+      let prev = prevField ? prevField.value.trim().replace(/\s+/g, " ") : "";
+      if (prev.length > NUDGE_PREV_MAX) prev = prev.slice(0, NUDGE_PREV_MAX).trimEnd() + "…";
+      if (prev) add(data.lead.replace("{prev}", prev));
+    }
+    data.questions.forEach(add);
+    if (idx > 1) add(NUDGE_RESTATE_CHECK);
+
+    panel.appendChild(list);
+  }
+
+  document.querySelectorAll(".nudge-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const idx = Number(btn.getAttribute("data-why"));
+      const panel = document.getElementById(`nudge-${idx}`);
+      const open = btn.getAttribute("aria-expanded") === "true";
+      if (!open) buildNudgePanel(idx);
+      panel.hidden = open;
+      btn.setAttribute("aria-expanded", String(!open));
+      btn.textContent = open ? "Need a nudge?" : "Hide nudge";
+    });
+  });
+
   document.querySelectorAll(".why-next-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       const idx = Number(btn.getAttribute("data-why"));
@@ -727,6 +825,14 @@
     digSubmitBtn.hidden = true;
     digResult.hidden = true;
     document.getElementById("dig-example").hidden = true;
+    document.querySelectorAll(".nudge-btn").forEach((b) => {
+      b.setAttribute("aria-expanded", "false");
+      b.textContent = "Need a nudge?";
+    });
+    document.querySelectorAll(".nudge-panel").forEach((p) => {
+      p.hidden = true;
+      p.textContent = "";
+    });
     hideStatus(digStatus);
     state.dig = null;
     lockStage("dig");

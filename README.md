@@ -10,7 +10,10 @@ Students work through four stages:
    problem statement (Who/What/When/How/Why).
 2. **Dig** — the student writes their own Five Whys chain (nothing is
    pre-filled or generated for them); the tool reviews the whole chain once
-   and states the root cause it actually arrives at.
+   and states the root cause it actually arrives at. Each Why has a
+   **Need a nudge?** button that reveals preloaded guiding questions for that
+   depth (no API call, no cost). The question bank is the `NUDGES` object in
+   `public/app.js`; the previous answer is quoted back into one lead question.
 3. **Test** — searches real public conversations (via Anthropic's web
    search tool) to check whether real people express this problem, and how
    painfully, then scores it 0–100 as a **migraine** (needs solving
