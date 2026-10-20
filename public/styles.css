@@ -157,6 +157,11 @@ form {
   font-weight: 500;
 }
 
+.field-hint {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
 .field-input {
   position: relative;
 }

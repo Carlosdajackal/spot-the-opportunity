@@ -6,8 +6,10 @@ bootcamps. No login required.
 
 Students work through four stages:
 
-1. **Spot** — turn a rough problem and idea into one narrow, testable
-   problem statement (Who/What/When/How/Why).
+1. **Spot** — turn a rough problem (and, optionally, an idea) into one
+   narrow, testable problem statement (Who/What/When/How/Why). "What are you
+   building?" is optional: if it's left blank the tool works from the
+   problem alone and never infers or suggests a solution.
 2. **Dig** — the student writes their own Five Whys chain (nothing is
    pre-filled or generated for them); the tool reviews the whole chain once
    and states the root cause it actually arrives at. Each Why has a

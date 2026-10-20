@@ -193,8 +193,8 @@
     event.preventDefault();
     const problem = problemField.value.trim();
     const idea = ideaField.value.trim();
-    if (!problem || !idea) {
-      showStatus(spotStatus, "Please fill in both fields.");
+    if (!problem) {
+      showStatus(spotStatus, "Please describe the problem you're working on.");
       return;
     }
     runSpot({ problem, idea });

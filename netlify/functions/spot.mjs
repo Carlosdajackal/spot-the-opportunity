@@ -33,8 +33,8 @@ When: "During product design, sourcing, production, pricing, and when launching 
 How: "They use more ethical materials and suppliers, which cost more, while competing against cheaper fast-fashion alternatives."
 Why: "Because sustainable fashion systems are more expensive and complex, and consumers are price-sensitive despite caring about sustainability."
 
-Given the student's rough description of (a) the problem they think exists and (b) what they are building:
-1. Find the real underlying problem, not the solution. Students often describe their solution as if it were the problem. If so, work backwards to name the actual pain point their solution implies.
+Given the student's rough description of (a) the problem they think exists and, optionally, (b) what they are building:
+1. Find the real underlying problem, not the solution. Students often describe their solution as if it were the problem. If so, work backwards to name the actual pain point their solution implies. If no solution was given, work from the problem alone: do not guess, infer, suggest or hint at any solution, product or idea anywhere in your output (including the statement, "how", "why" and assumptions). "How" describes how people cope with the problem today, never what could be built to fix it. Any assumptions you note must be about the problem itself (who is affected, when it happens), never about a possible solution.
 2. Narrow it hard. Reject "everyone" or "people" as a who. Reject "in general" or "these days" as a when. Name a specific group and a specific triggering moment or context.
 3. Write ONE problem statement sentence in the same register and length as the example.
 4. Fill who/what/when/how/why as short phrases matching the terseness of the example. why starts with "Because...".
@@ -63,8 +63,8 @@ export default async (req, context) => {
   const problem = cleanInput(body?.problem);
   const idea = cleanInput(body?.idea);
 
-  if (!problem || !idea) {
-    return badRequestResponse("Please fill in both fields.");
+  if (!problem) {
+    return badRequestResponse("Please describe the problem you're working on.");
   }
 
   const rateCheck = await checkAndReserveRateLimit({ ip: context.ip, sessionId: getSessionId(req) });
@@ -80,7 +80,9 @@ export default async (req, context) => {
       messages: [
         {
           role: "user",
-          content: `The problem the student thinks they're solving: ${problem}\n\nWhat they are building (their idea/solution): ${idea}`,
+          content: idea
+            ? `The problem the student thinks they're solving: ${problem}\n\nWhat they are building (their idea/solution): ${idea}`
+            : `The problem the student is working on: ${problem}\n\nThe student has not described a solution. Work only from the problem and do not introduce one.`,
         },
       ],
     });
