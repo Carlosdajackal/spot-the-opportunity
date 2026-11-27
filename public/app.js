@@ -391,6 +391,7 @@
   const hintStatus = document.getElementById("hint-status");
   const hintAnnouncer = document.getElementById("hint-announcer");
   let hintsUsed = 0;
+  let hintLog = []; // { why, nudge, suggested_answer } for each hint shown; marked in the PDF
   let hintLoading = false;
   let hintRequestId = 0; // bumped on Start over, so a late reply is ignored
   let activeWhy = 1;
@@ -455,6 +456,7 @@
     }
 
     hintsUsed++;
+    hintLog.push({ why: idx, nudge: result.data.nudge, suggested_answer: result.data.suggested_answer });
     updateHintButton();
     renderHint(idx, result.data);
   });
@@ -496,6 +498,7 @@
   function resetHints() {
     hintRequestId++;
     hintsUsed = 0;
+    hintLog = [];
     hintLoading = false;
     document.querySelectorAll(".hint-panel").forEach((p) => {
       p.hidden = true;
@@ -912,6 +915,252 @@
   document.getElementById("judge-copy-btn").addEventListener("click", async () => {
     await copyText(formatJudgeAsText(), document.getElementById("judge-copy-btn"));
   });
+
+  // ---------- Download as PDF ----------
+  // Built entirely in the browser with jsPDF (self-hosted under /vendor,
+  // and only loaded the first time someone presses the button), so the
+  // student's answers never leave their device for this. On iPhone, Safari
+  // opens the PDF with a Share button to save it to Files or send it on.
+  const DOWNLOAD_IDLE_LABEL = "Download my results (PDF)";
+  const DOWNLOAD_LOADING_LABEL = "Preparing your PDF…";
+  const downloadBtn = document.getElementById("judge-download-btn");
+  const judgeStatus = document.getElementById("judge-status");
+  let jsPdfLoading = null;
+
+  function loadJsPdf() {
+    if (window.jspdf && window.jspdf.jsPDF) return Promise.resolve(window.jspdf.jsPDF);
+    if (!jsPdfLoading) {
+      jsPdfLoading = new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = "/vendor/jspdf/jspdf.umd.min.js";
+        script.onload = () => (window.jspdf && window.jspdf.jsPDF ? resolve(window.jspdf.jsPDF) : reject(new Error("jsPDF missing")));
+        script.onerror = () => reject(new Error("jsPDF failed to load"));
+        document.head.appendChild(script);
+      }).catch((error) => {
+        jsPdfLoading = null; // allow a retry
+        throw error;
+      });
+    }
+    return jsPdfLoading;
+  }
+
+  downloadBtn.addEventListener("click", async () => {
+    if (!state.spot || !state.dig || !state.test) return;
+    hideStatus(judgeStatus);
+    setButtonLoading(downloadBtn, true, DOWNLOAD_LOADING_LABEL, DOWNLOAD_IDLE_LABEL);
+    try {
+      const JsPDF = await loadJsPdf();
+      buildResultsPdf(JsPDF).save(`spot-the-opportunity-${localDateStamp()}.pdf`);
+    } catch {
+      showStatus(judgeStatus, "Couldn't create the PDF. Please try again, or use Print instead.");
+    } finally {
+      setButtonLoading(downloadBtn, false, DOWNLOAD_LOADING_LABEL, DOWNLOAD_IDLE_LABEL);
+    }
+  });
+
+  function localDateStamp() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+
+  // jsPDF's built-in fonts only cover Western European characters, so
+  // swap typographic punctuation for plain equivalents and replace
+  // anything else they can't draw, rather than printing garbage.
+  function pdfSafe(text) {
+    return String(text ?? "")
+      .normalize("NFC")
+      .replace(/[\u2018\u2019\u201A\u201B\u2032]/g, "'")
+      .replace(/[\u201C\u201D\u201E\u201F\u2033]/g, '"')
+      .replace(/[\u2012\u2013]/g, "-")
+      .replace(/\s*\u2014\s*/g, " - ")
+      .replace(/\u2026/g, "...")
+      .replace(/[\u00A0\u202F]/g, " ")
+      .replace(/[^\n\x20-\x7E\xA1-\xFF]/gu, "?")
+      .trim();
+  }
+
+  function buildResultsPdf(JsPDF) {
+    const spot = state.spot.result;
+    const dig = state.dig.result;
+    const test = state.test.result;
+
+    const doc = new JsPDF({ unit: "mm", format: "a4" });
+    const PAGE_H = 297;
+    const MARGIN = 18;
+    const WIDTH = 210 - MARGIN * 2;
+    const INK = [40, 39, 39];
+    const AMETHYST = [158, 97, 164];
+    const MUTED = [95, 95, 95];
+    let y = MARGIN;
+
+    const ensureRoom = (height) => {
+      if (y + height > PAGE_H - MARGIN) {
+        doc.addPage();
+        y = MARGIN;
+      }
+    };
+
+    // Writes wrapped text. `bullet` draws a hanging bullet; `link` makes
+    // every line of the text a clickable link to that URL.
+    const write = (text, { size = 10.5, style = "normal", color = INK, indent = 0, gap = 1.6, bullet = false, link } = {}) => {
+      const clean = pdfSafe(text);
+      if (!clean) return;
+      doc.setFont("helvetica", style);
+      doc.setFontSize(size);
+      doc.setTextColor(...color);
+      const textIndent = indent + (bullet ? 4 : 0);
+      const lineHeight = size * 0.45;
+      doc.splitTextToSize(clean, WIDTH - textIndent).forEach((line, i) => {
+        ensureRoom(lineHeight);
+        y += lineHeight;
+        if (bullet && i === 0) doc.text("-", MARGIN + indent, y);
+        if (link) doc.textWithLink(line, MARGIN + textIndent, y, { url: link });
+        else doc.text(line, MARGIN + textIndent, y);
+      });
+      y += gap;
+    };
+    const heading = (text) => {
+      ensureRoom(16);
+      y += 5;
+      write(text, { size: 14, style: "bold", color: AMETHYST, gap: 2 });
+    };
+    const subheading = (text) => {
+      ensureRoom(10);
+      y += 1.5;
+      write(text, { size: 11, style: "bold", gap: 1 });
+    };
+
+    // Title
+    write("Spot the Opportunity", { size: 20, style: "bold", gap: 1 });
+    write(
+      `Your results · ${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })} · UEL Careers and Student Enterprise`,
+      { size: 9.5, color: MUTED, gap: 2 }
+    );
+
+    // 1. Spot
+    heading("1. Spot: your problem statement");
+    write(spot.statement, { size: 11.5, style: "bold", gap: 2 });
+    [["Who", spot.who], ["What", spot.what], ["When", spot.when], ["How", spot.how], ["Why", spot.why]].forEach(([label, value]) =>
+      write(`${label}: ${value}`)
+    );
+
+    // 2. Dig
+    heading("2. Dig: your Five Whys");
+    write(
+      hintLog.length
+        ? `Hints used: ${hintLog.length} of ${MAX_HINTS}. Each one is marked under the Why it was asked for.`
+        : "Hints used: none.",
+      { size: 9.5, style: "italic", color: MUTED, gap: 2 }
+    );
+    state.dig.whys.forEach((answer, i) => {
+      write(`Why ${i + 1}: ${answer}`, { gap: 1 });
+      hintLog
+        .filter((h) => h.why === i + 1)
+        .forEach((h) =>
+          write(`[Hint used] Question: ${h.nudge} Suggested answer: ${h.suggested_answer}`, {
+            size: 9,
+            style: "italic",
+            color: AMETHYST,
+            indent: 6,
+            gap: 1,
+          })
+        );
+      y += 0.8;
+    });
+    subheading("Root cause your chain arrives at");
+    write(dig.root_cause);
+    dig.feedback.forEach((f) => write(f, { bullet: true, gap: 1 }));
+    if (dig.deeper_prompt && dig.deeper_prompt.trim()) write(`Push further: ${dig.deeper_prompt}`, { style: "italic" });
+
+    // 3. Test
+    heading("3. Test: what real people say");
+    write(formatVerdictLine(test), { style: "bold", gap: 2 });
+    if (test.verdict !== "insufficient" && Math.abs(test.score - (test.migraine_threshold ?? 60)) <= BORDERLINE_MARGIN) {
+      write("This score is close to the line between a headache and a migraine. Results can move a few points between runs.", {
+        size: 9.5,
+        style: "italic",
+        color: MUTED,
+      });
+    }
+    if (test.verdict === "insufficient") {
+      write(
+        "We couldn't find many people describing this online. That's common for specialist audiences. It means you need to talk to 5 of them, not that the problem is weak."
+      );
+      if (test.talk_to.length) {
+        subheading("Who to talk to, and where to find them");
+        test.talk_to.forEach((t) => write(`${t.who}${t.where ? ` - ${t.where}` : ""}`, { bullet: true, gap: 1 }));
+      }
+    }
+    if (test.sharpening_advice.length) {
+      subheading("Sharpening advice");
+      test.sharpening_advice.forEach((a) => write(a, { bullet: true, gap: 1 }));
+    }
+
+    subheading("Root cause check");
+    const comparison = test.root_cause_comparison;
+    write(`${capitalize(comparison.verdict)}${comparison.evidence_suggests ? `: ${comparison.evidence_suggests}` : ""}`);
+    write(comparison.explanation);
+
+    if (test.pain_points.length) {
+      subheading("What real people are saying");
+      test.pain_points.forEach((pp) => {
+        write(pp.category, { style: "bold", gap: 0.5 });
+        write(pp.summary, { gap: 0.5 });
+        if (pp.frequency) write(`Based on ${pp.frequency}`, { size: 9, style: "italic", color: MUTED });
+      });
+    }
+
+    subheading("Evidence, by type");
+    write('Only "Person with the problem" and "Practitioner / peer" count towards the score.', {
+      size: 9,
+      style: "italic",
+      color: MUTED,
+    });
+    if (!test.evidence.length) write("No usable evidence was found for this search.");
+    EVIDENCE_LABELS.forEach((label) => {
+      const group = test.evidence.filter((e) => e.label === label.key);
+      if (!group.length) return;
+      write(`${label.name} (${group.length})`, { style: "bold", gap: 1 });
+      group.forEach((e) => {
+        write(`"${e.quote}"`, { style: "italic", indent: 4, gap: 0.5 });
+        write(`${e.source || "Source"}: ${e.url}`, { size: 8.5, color: AMETHYST, indent: 4, gap: 1.8, link: e.url });
+      });
+    });
+
+    if (test.cost_summary && test.cost_summary.trim()) {
+      subheading("Why it matters");
+      write(test.cost_summary);
+    }
+    if (test.priority_ranking.length) {
+      subheading("Priority ranking");
+      test.priority_ranking.forEach((r, i) => write(`${i + 1}. ${r.pain_point} - ${r.rationale}`, { gap: 1 }));
+    }
+    if (test.evidence_note && test.evidence_note.trim()) {
+      subheading("About this search");
+      write(test.evidence_note, { size: 9.5 });
+    }
+    const looked = (test.sources || []).filter((r) => r.status !== "not_selected");
+    if (looked.length) {
+      subheading("Where we looked");
+      looked.forEach((r) => write(`${r.label}: ${(SOURCE_STATUS_TEXT[r.status] || (() => r.status))(r)}`, { size: 9.5, bullet: true, gap: 0.8 }));
+    }
+
+    // 4. Judge
+    heading("4. Judge: your conclusion");
+    write(judgeConclusion.value.trim() || "(No conclusion written yet.)");
+
+    // Page numbers
+    const pages = doc.getNumberOfPages();
+    for (let page = 1; page <= pages; page++) {
+      doc.setPage(page);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(...MUTED);
+      doc.text(`Spot the Opportunity · page ${page} of ${pages}`, MARGIN, PAGE_H - 10);
+    }
+
+    return doc;
+  }
 
   document.getElementById("judge-print-btn").addEventListener("click", () => {
     window.print();

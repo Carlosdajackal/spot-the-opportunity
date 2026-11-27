@@ -344,6 +344,19 @@ textarea::placeholder {
   background: rgba(255, 255, 255, 0.12);
 }
 
+/* The Judge stage sits on the white page, not a dark result card, so its
+   secondary buttons need the normal outlined style (they were white on
+   white, and so invisible, before). */
+.judge-actions .btn-secondary {
+  border-color: var(--color-black);
+  background: var(--color-white);
+  color: var(--color-black);
+}
+
+.judge-actions .btn-secondary:hover {
+  background: rgba(40, 39, 39, 0.06);
+}
+
 /* ---------- Status / error messaging ---------- */
 .status-message {
   margin-top: 1.25rem;

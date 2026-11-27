@@ -31,8 +31,14 @@ Students work through four stages:
    accounts it says **"Not enough evidence to score"** instead, and points
    the student towards who to interview. See "How Test works" below.
 4. **Judge** — no API call. A summary of all three stages, with a
-   conclusion box for the student to write up their own judgment, a Copy
-   export, and Print / Save as PDF.
+   conclusion box for the student to write up their own judgment, a
+   **Download my results (PDF)** button, Copy, and Print. The PDF is built
+   in the browser with jsPDF (self-hosted in `public/vendor/jspdf/`, MIT
+   licence, loaded only when the button is pressed), so nothing is sent
+   anywhere. It includes every stage, the evidence with clickable source
+   links, and marks any Five Whys hints the student used. jsPDF's built-in
+   fonts only cover Western European characters, so anything else (emoji,
+   non-Latin scripts) shows as "?" in the PDF.
 
 ## How it works
 
