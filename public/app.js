@@ -590,6 +590,8 @@
     error: (r) => `couldn't be reached${r.note ? ` (${r.note})` : ""}`,
   };
 
+  const BORDERLINE_MARGIN = 10; // points either side of the migraine line
+
   function verdictWord(verdict) {
     if (verdict === "migraine") return "Migraine";
     if (verdict === "headache") return "Headache";
@@ -608,6 +610,12 @@
           data.counts.person === 1 ? "account" : "accounts"
         } from people with the problem, and need at least ${data.min_person_items} to score it. ${data.reasoning}`.trim()
       : data.reasoning;
+
+    // Scores this close to the migraine line can flip between runs, so
+    // suggest running Test again rather than trusting one result.
+    const threshold = data.migraine_threshold ?? 60;
+    document.getElementById("test-borderline").hidden =
+      insufficient || Math.abs(data.score - threshold) > BORDERLINE_MARGIN;
 
     document.getElementById("test-thin").hidden = !insufficient;
     const talkTo = document.getElementById("test-talk-to");

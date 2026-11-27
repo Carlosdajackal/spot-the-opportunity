@@ -270,6 +270,7 @@ export function buildResult({ parsed, items, plan, sourceReport, rootCause }) {
     verdict,
     score,
     min_person_items: MIN_PERSON_ITEMS,
+    migraine_threshold: MIGRAINE_THRESHOLD,
     counts,
     reasoning: String(parsed?.reasoning ?? ""),
     cost_summary: String(parsed?.cost_summary ?? ""),

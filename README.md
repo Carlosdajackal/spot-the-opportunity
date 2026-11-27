@@ -81,7 +81,10 @@ Students work through four stages:
    items there is no score: the result says "Not enough evidence to
    score", explains that this is common for specialist audiences, and
    lists who to talk to and where to find them. The thresholds are named
-   constants at the top of `lib/test-pipeline.mjs`.
+   constants at the top of `lib/test-pipeline.mjs`. Each run finds
+   slightly different posts, so a score within 10 points of the migraine
+   line (50–70) shows a tip suggesting the student runs Test again and
+   compares.
 
 The browser can only ever reach this site's own `/api/*` endpoints — the
 API key never appears in any client-side file.
