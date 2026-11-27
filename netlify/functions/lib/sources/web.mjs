@@ -99,6 +99,9 @@ async function runWebSearch({ apiKey, domains, maxUses, task, classify }) {
     if (block?.type !== "text" || !Array.isArray(block.citations)) continue;
     for (const c of block.citations) {
       if (c?.type !== "web_search_result_location" || !c.url || !c.cited_text) continue;
+      // allowed_domains alone isn't enough: preview runs showed regulator
+      // searches citing ncbi.nlm.nih.gov and arxiv.org. Enforce it here too.
+      if (domains && !domains.some((d) => hostOf(c.url) === d || hostOf(c.url).endsWith(`.${d}`))) continue;
       const entry = byUrl.get(c.url) || { title: c.title || "", texts: [] };
       if (!entry.texts.includes(c.cited_text)) entry.texts.push(c.cited_text);
       byUrl.set(c.url, entry);
