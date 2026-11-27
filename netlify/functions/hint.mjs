@@ -33,11 +33,14 @@ What the hint is about:
 - For Why 1: what causes the problem in their problem statement, especially its "because" reason.
 - For Why 2 to 5: what causes their answer to the previous why. Work from THEIR answer, not from what you think the chain should be.
 
-First, check their previous answer (for Why 1 there is none, so use "ok"):
-- "repeat": it says essentially the same thing as one of their earlier answers or the problem statement, in different words. Students do this often; check carefully against EACH earlier answer and the statement.
-- "symptom": it describes an effect or consequence of the problem rather than something that causes it.
-- "ok": it genuinely names a cause, one step deeper.
-Put this in "previous_answer_check". If it is "repeat" or "symptom", the student is shown a short note saying so before your nudge, so don't say it again yourself: just ask what causes it.
+First, compare (for Why 1 there is no previous answer: use "ok" and empty strings):
+- "previous_core": the core idea of their previous answer, in 8 words or fewer.
+- "earlier_cores": the core idea of the problem statement's "because" reason and of each answer before the previous one, 8 words or fewer each.
+- "previous_answer_check":
+  - "repeat" if previous_core is the same idea as any of earlier_cores, even in different words. Example: "customers find the checkout confusing" and "the checkout process is hard for shoppers to understand" are the same idea. Students do this often, so compare carefully.
+  - "symptom" if the previous answer describes an effect or consequence of the problem (what goes wrong, what they notice) rather than a reason it happens. Example: "lots of customers abandon their baskets" is a symptom.
+  - "ok" if it genuinely names a cause one step deeper.
+If the check is "repeat" or "symptom", the student is shown a short note saying so before your nudge, so don't say it again yourself: just ask what causes it.
 
 Then write the hint, in two parts:
 1. "nudge": one short sentence, a question or a direction to think in, about their previous answer (or, for Why 1, the problem statement). Point towards causes: people, habits, incentives, rules, time, money, knowledge, or how the system is set up.
@@ -48,7 +51,7 @@ Rules for both parts:
 - UK English spelling. Plain words a final-year student would use. No jargon unless they used it first.
 - Keep each part under 35 words.
 
-Return ONLY a single valid JSON object, no markdown fences: {"previous_answer_check":"ok|repeat|symptom","nudge":"...","suggested_answer":"..."}`;
+Return ONLY a single valid JSON object, no markdown fences: {"previous_core":"...","earlier_cores":["..."],"previous_answer_check":"ok|repeat|symptom","nudge":"...","suggested_answer":"..."}`;
 
 // Added in code, not left to the model, so a repeated or symptom answer is
 // always pointed out (preview testing showed the model sometimes moved on
