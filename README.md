@@ -73,7 +73,8 @@ Students work through four stages:
    *Cost evidence* or *Research*, and quotes it by id. Code then checks
    every quote appears word-for-word in the retrieved text (falling back
    to the real text if not), and restricts labels by source: a CVE or a
-   paper can never be labelled as a person.
+   paper can never be labelled as a person. At most 5 *Commentary / vendor*
+   items are kept (`MAX_COMMENTARY_SHOWN`), since they're only context.
 4. **Scoring, in code.** The score is the average pain intensity of the
    *Person* and *Practitioner* items only, so commentary, vendors,
    regulators and papers can never raise it. With fewer than 5 *Person*

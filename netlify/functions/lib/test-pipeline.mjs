@@ -22,6 +22,10 @@ import { REGULATOR_DOMAINS } from "./sources/web.mjs";
 // there isn't enough evidence yet, and point the student at interviews.
 export const MIN_PERSON_ITEMS = 5;
 export const MIGRAINE_THRESHOLD = 60;
+// Commentary never counts towards the score, so it's only shown for
+// context. Keep just the most useful few so it doesn't bury the evidence
+// that matters (preview runs returned 30+ commentary items).
+export const MAX_COMMENTARY_SHOWN = 5;
 
 const PLAN_MAX_TOKENS = 2500;
 const SYNTHESIS_MAX_TOKENS = 12000;
@@ -137,7 +141,7 @@ ABSOLUTE RULE ON QUOTES. Every quote must be copied character-for-character from
 Step 1. Label every item that is genuinely about this problem. Leave out any item that isn't about this specific problem, even if it shares keywords: an unrelated question is not commentary, it is simply left out.
 - "person": a first-person account from someone in the TARGET AUDIENCE named in the problem statement, who has this problem themselves ("I", "we", "my team"). Someone outside that audience is never a person, even if they write in the first person.
 - "practitioner": someone close to the audience describing the problem as they see it in people they work with or support, such as a clinician, teacher, carer, support worker, or a developer building tools for that audience.
-- "commentary": blogs, news write-ups, consultancies, marketing pages, generic advice, or a company selling a fix.
+- "commentary": blogs, news write-ups, consultancies, marketing pages, generic advice, or a company selling a fix. Label at most ${MAX_COMMENTARY_SHOWN} commentary items, choosing those that add the most useful context about this exact problem.
 - "cost": regulator, government, incident, vulnerability or statistical evidence that the problem causes harm or costs something.
 - "research": academic papers.
 An item's group limits its label: a "people" group item can only be person, practitioner or commentary; a "cost" group item can only be cost; a "research" group item can only be research. For research items, prefer sentences about limitations, open challenges or future work, which show the problem is recognised and unsolved.
@@ -222,6 +226,8 @@ export function buildResult({ parsed, items, plan, sourceReport, rootCause }) {
       signals: item.signals,
     };
     labelled.set(item.id, entry);
+    // The prompt asks for at most MAX_COMMENTARY_SHOWN; this enforces it.
+    if (label === "commentary" && evidence.filter((e) => e.label === "commentary").length >= MAX_COMMENTARY_SHOWN) continue;
     evidence.push(entry);
   }
 
