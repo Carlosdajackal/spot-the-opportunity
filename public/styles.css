@@ -546,6 +546,67 @@ textarea::placeholder {
   font-size: 0.9rem;
 }
 
+.dig-help-note {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+}
+
+/* ---------- Dig: hints (one tool, moved to the active Why) ---------- */
+.hint-tool {
+  margin-top: 0.5rem;
+}
+
+.hint-btn {
+  font-size: 0.9rem;
+}
+
+.hint-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.hint-status,
+.hint-exhausted {
+  margin: 0.4rem 0 0;
+  font-size: 0.9rem;
+}
+
+.hint-status {
+  font-weight: 500;
+}
+
+.hint-panel {
+  margin-top: 0.5rem;
+}
+
+.hint-card {
+  margin-bottom: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--color-amethyst);
+  background: rgba(158, 97, 164, 0.08);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+}
+
+.hint-label {
+  margin: 0 0 0.35rem;
+  font-weight: 500;
+}
+
+.hint-nudge {
+  margin: 0 0 0.5rem;
+}
+
+.hint-suggest-label {
+  margin: 0 0 0.2rem;
+  font-size: 0.85rem;
+}
+
+.hint-suggest {
+  margin: 0;
+  font-style: italic;
+}
+
 .nudge-panel {
   margin-top: 0.5rem;
   padding: 0.75rem 1rem;

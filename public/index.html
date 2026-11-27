@@ -128,6 +128,11 @@
           A surface problem is often just a symptom. To understand the root cause, you need to dig deeper. This is
           the <strong>Five Whys</strong> technique, which comes from Toyota's manufacturing process.
         </p>
+        <p class="dig-help-note">
+          <strong>Need a nudge?</strong> shows general questions for any Why. <strong>Hint on my answer</strong>
+          reads what you've written so far, asks you one question about it, and offers an answer you could use or
+          adapt. You get 2 hints in total, so save them for when you're really stuck.
+        </p>
 
         <button type="button" id="dig-example-toggle" class="link-btn">Stuck? Show me an example chain</button>
         <div id="dig-example" class="example-block" hidden>
@@ -159,7 +164,17 @@
               </button>
             </div>
             <button type="button" class="link-btn nudge-btn" data-why="1" aria-expanded="false" aria-controls="nudge-1">Need a nudge?</button>
+            <!-- The one Hint tool for all five whys. app.js moves it next to
+                 whichever Why box is active. -->
+            <div class="hint-tool" id="hint-tool">
+              <button type="button" class="btn-secondary hint-btn" id="hint-btn">Hint on my answer (2 left)</button>
+              <p class="hint-status" id="hint-status" hidden></p>
+              <p class="hint-exhausted" id="hint-exhausted" hidden>
+                You've used your hints. Trust your own thinking for the rest. There's no wrong answer at this stage.
+              </p>
+            </div>
             <div class="nudge-panel" id="nudge-1" hidden></div>
+            <div class="hint-panel" id="hint-panel-1" hidden></div>
             <button type="button" class="btn-secondary why-next-btn" data-why="1">Next</button>
           </div>
 
@@ -178,6 +193,7 @@
             </div>
             <button type="button" class="link-btn nudge-btn" data-why="2" aria-expanded="false" aria-controls="nudge-2">Need a nudge?</button>
             <div class="nudge-panel" id="nudge-2" hidden></div>
+            <div class="hint-panel" id="hint-panel-2" hidden></div>
             <button type="button" class="btn-secondary why-next-btn" data-why="2">Next</button>
           </div>
 
@@ -196,6 +212,7 @@
             </div>
             <button type="button" class="link-btn nudge-btn" data-why="3" aria-expanded="false" aria-controls="nudge-3">Need a nudge?</button>
             <div class="nudge-panel" id="nudge-3" hidden></div>
+            <div class="hint-panel" id="hint-panel-3" hidden></div>
             <button type="button" class="btn-secondary why-next-btn" data-why="3">Next</button>
           </div>
 
@@ -214,6 +231,7 @@
             </div>
             <button type="button" class="link-btn nudge-btn" data-why="4" aria-expanded="false" aria-controls="nudge-4">Need a nudge?</button>
             <div class="nudge-panel" id="nudge-4" hidden></div>
+            <div class="hint-panel" id="hint-panel-4" hidden></div>
             <button type="button" class="btn-secondary why-next-btn" data-why="4">Next</button>
           </div>
 
@@ -232,6 +250,7 @@
             </div>
             <button type="button" class="link-btn nudge-btn" data-why="5" aria-expanded="false" aria-controls="nudge-5">Need a nudge?</button>
             <div class="nudge-panel" id="nudge-5" hidden></div>
+            <div class="hint-panel" id="hint-panel-5" hidden></div>
           </div>
 
           <button type="submit" id="dig-submit-btn" class="btn-primary" hidden>
@@ -254,6 +273,7 @@
         </section>
 
         <p id="dig-status" class="status-message" role="alert" hidden></p>
+        <p id="hint-announcer" class="visually-hidden" aria-live="polite"></p>
       </section>
 
       <!-- ================= STAGE 3 — TEST ================= -->

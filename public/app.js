@@ -377,6 +377,136 @@
     });
   });
 
+  // ---------- Hints: 2 across the whole Five Whys ----------
+  // One Hint tool, moved next to whichever Why box is active. A hint for
+  // Why n is about the student's answer to Why n-1 (Why 1: the problem
+  // statement). It's only counted once one is actually shown, so a failed
+  // request, an empty previous answer or a double-click never uses one up.
+  // The count lives only in memory: "Start over" (or a refresh) resets it.
+  // Hints are shown in a panel, never written into the answer box.
+  const MAX_HINTS = 2;
+  const HINT_LOADING_LABEL = "Getting a hint…";
+  const hintTool = document.getElementById("hint-tool");
+  const hintBtn = document.getElementById("hint-btn");
+  const hintStatus = document.getElementById("hint-status");
+  const hintAnnouncer = document.getElementById("hint-announcer");
+  let hintsUsed = 0;
+  let hintLoading = false;
+  let hintRequestId = 0; // bumped on Start over, so a late reply is ignored
+  let activeWhy = 1;
+
+  function hintsLeft() {
+    return MAX_HINTS - hintsUsed;
+  }
+
+  function updateHintButton() {
+    const left = hintsLeft();
+    hintBtn.disabled = hintLoading || left <= 0;
+    hintBtn.textContent = hintLoading ? HINT_LOADING_LABEL : left > 0 ? `Hint on my answer (${left} left)` : "No hints left";
+    document.getElementById("hint-exhausted").hidden = left > 0;
+  }
+
+  function moveHintTool(idx) {
+    activeWhy = idx;
+    const nudgeBtn = document.querySelector(`.nudge-btn[data-why="${idx}"]`);
+    if (nudgeBtn.nextElementSibling !== hintTool) nudgeBtn.after(hintTool);
+  }
+
+  for (let i = 1; i <= WHY_COUNT; i++) {
+    document.getElementById(`why-${i}`).addEventListener("focus", () => {
+      if (activeWhy === i) return;
+      hideStatus(hintStatus);
+      moveHintTool(i);
+    });
+  }
+
+  hintBtn.addEventListener("click", async () => {
+    if (hintLoading || hintsLeft() <= 0 || !state.spot || !state.spot.result) return;
+
+    const idx = activeWhy;
+    const whys = [];
+    for (let i = 1; i < idx; i++) {
+      whys.push(document.getElementById(`why-${i}`).value.trim());
+    }
+    if (idx > 1 && !whys[idx - 2]) {
+      showStatus(hintStatus, "Write your answer to the previous Why first, then ask for a hint.");
+      return;
+    }
+
+    hideStatus(hintStatus);
+    hintLoading = true;
+    updateHintButton();
+    const requestId = ++hintRequestId;
+
+    const result = await callApi("/api/hint", {
+      statement: state.spot.result.statement,
+      because: state.spot.result.why,
+      whys,
+      why: idx,
+    });
+
+    if (requestId !== hintRequestId) return; // the student pressed Start over meanwhile
+    hintLoading = false;
+
+    if (!result.ok) {
+      showStatus(hintStatus, "Couldn't get a hint, try again.");
+      updateHintButton();
+      return;
+    }
+
+    hintsUsed++;
+    updateHintButton();
+    renderHint(idx, result.data);
+  });
+
+  function renderHint(idx, data) {
+    const panel = document.getElementById(`hint-panel-${idx}`);
+    const card = document.createElement("div");
+    card.className = "hint-card";
+
+    const label = document.createElement("p");
+    label.className = "hint-label";
+    label.textContent = `Hint for Why ${idx}`;
+    card.appendChild(label);
+
+    const nudge = document.createElement("p");
+    nudge.className = "hint-nudge";
+    nudge.textContent = data.nudge;
+    card.appendChild(nudge);
+
+    const suggestLabel = document.createElement("p");
+    suggestLabel.className = "hint-suggest-label";
+    suggestLabel.textContent = "An answer you could use or adapt:";
+    card.appendChild(suggestLabel);
+
+    const suggest = document.createElement("blockquote");
+    suggest.className = "hint-suggest";
+    suggest.textContent = data.suggested_answer;
+    card.appendChild(suggest);
+
+    panel.appendChild(card);
+    panel.hidden = false;
+
+    const left = hintsLeft();
+    hintAnnouncer.textContent = `Hint for Why ${idx}: ${data.nudge} An answer you could use or adapt: ${data.suggested_answer} ${
+      left === 0 ? "No hints left." : `${left} ${left === 1 ? "hint" : "hints"} left.`
+    }`;
+  }
+
+  function resetHints() {
+    hintRequestId++;
+    hintsUsed = 0;
+    hintLoading = false;
+    document.querySelectorAll(".hint-panel").forEach((p) => {
+      p.hidden = true;
+      p.textContent = "";
+    });
+    hideStatus(hintStatus);
+    hintAnnouncer.textContent = "";
+    moveHintTool(1);
+    updateHintButton();
+  }
+
   document.querySelectorAll(".why-next-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       const idx = Number(btn.getAttribute("data-why"));
@@ -948,6 +1078,7 @@
       p.hidden = true;
       p.textContent = "";
     });
+    resetHints();
     hideStatus(digStatus);
     state.dig = null;
     lockStage("dig");
