@@ -11,8 +11,16 @@ Students work through four stages:
    building?" is optional: if it's left blank the tool works from the
    problem alone and never infers or suggests a solution.
 2. **Dig** — the student writes their own Five Whys chain (nothing is
-   pre-filled or generated for them); the tool reviews the whole chain once
-   and states the root cause it actually arrives at. Each Why has a
+   pre-filled or written into their boxes); the tool reviews the whole
+   chain once and states the root cause it actually arrives at. If they're
+   stuck they can use up to **2 hints** across the five whys
+   (`netlify/functions/hint.mjs`, at `/api/hint`): each is a question about
+   their own previous answer plus one example answer they can use or
+   adapt, shown in a panel and never filled in for them. Hints point at
+   causes, never solutions. The 2-hint limit is kept in the browser and
+   resets on "Start over" (or a refresh); every hint still counts towards
+   the per-session rate limit. The fixed "Need a nudge?" prompts are
+   unlimited and need no API call. Each Why has a
    **Need a nudge?** button that reveals preloaded guiding questions for that
    depth (no API call, no cost). The question bank is the `NUDGES` object in
    `public/app.js`; the previous answer is quoted back into one lead question.
@@ -30,10 +38,10 @@ Students work through four stages:
 
 - `public/index.html` (+ `styles.css`, `app.js`) — the page students see.
   Contains no secrets and never talks to Anthropic directly.
-- `netlify/functions/spot.mjs`, `dig.mjs` — two ordinary Netlify serverless
+- `netlify/functions/spot.mjs`, `dig.mjs`, `hint.mjs` — ordinary Netlify serverless
   functions. Each holds the Anthropic API key server-side
   (`Netlify.env.get("ANTHROPIC_API_KEY")`) and returns the finished result
-  directly to the browser, at `/api/spot` and `/api/dig`.
+  directly to the browser, at `/api/spot`, `/api/dig` and `/api/hint`.
 - `netlify/functions/test-background.mjs` + `test-status.mjs` — Stage 3 is
   different: a web-search-backed validation with synthesis routinely takes
   longer than Netlify's ~30-second synchronous function limit. So
@@ -81,7 +89,10 @@ Students work through four stages:
    items there is no score: the result says "Not enough evidence to
    score", explains that this is common for specialist audiences, and
    lists who to talk to and where to find them. The thresholds are named
-   constants at the top of `lib/test-pipeline.mjs`.
+   constants at the top of `lib/test-pipeline.mjs`. Each run finds
+   slightly different posts, so a score within 10 points of the migraine
+   line (50–70) shows a tip suggesting the student runs Test again and
+   compares.
 
 The browser can only ever reach this site's own `/api/*` endpoints — the
 API key never appears in any client-side file.
