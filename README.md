@@ -16,10 +16,12 @@ Students work through four stages:
    **Need a nudge?** button that reveals preloaded guiding questions for that
    depth (no API call, no cost). The question bank is the `NUDGES` object in
    `public/app.js`; the previous answer is quoted back into one lead question.
-3. **Test** — searches real public conversations (via Anthropic's web
-   search tool) to check whether real people express this problem, and how
-   painfully, then scores it 0–100 as a **migraine** (needs solving
-   urgently) or a **headache** (nice-to-have, not urgent).
+3. **Test** — works out who has the problem and where they talk, searches
+   those places, labels every piece of evidence, and scores the first-hand
+   accounts 0–100 as a **migraine** (needs solving urgently) or a
+   **headache** (nice-to-have, not urgent). With too few first-hand
+   accounts it says **"Not enough evidence to score"** instead, and points
+   the student towards who to interview. See "How Test works" below.
 4. **Judge** — no API call. A summary of all three stages, with a
    conclusion box for the student to write up their own judgment, a Copy
    export, and Print / Save as PDF.
@@ -42,7 +44,42 @@ Students work through four stages:
   reached at `/api/test` and `/api/test-status` — the browser never talks
   to Anthropic directly, same as the other two stages.
 - `netlify/functions/lib/` — shared code used across functions: the
-  Anthropic API caller, rate limiting, and small HTTP helpers.
+  Anthropic API caller, rate limiting, small HTTP helpers, and Stage 3's
+  pipeline (`test-pipeline.mjs`) and sources (`sources/`).
+
+## How Test works
+
+1. **Audience map.** One Claude call (no tools) reads the problem
+   statement and root cause and returns a small plan: who has the problem,
+   the words *they* use, which sources are relevant, and 3–6 short queries
+   for each. Only those sources are searched, so a consumer problem
+   doesn't trawl arXiv and a machine learning problem doesn't trawl the
+   App Store.
+2. **Sources, in parallel.** Each source in `netlify/functions/lib/sources/`
+   runs behind its own timeout and returns at most about 10 results;
+   results are deduplicated by URL. A source that is rate-limited, down or
+   missing a key is listed under "Where we looked" and the Test carries on.
+   - People who complain (the only sources that can count): Stack
+     Exchange, Hacker News (Algolia), GitHub issues, Discourse forums on
+     the allowlist in `lib/discourse-forums.mjs`, App Store reviews,
+     Bluesky (needs an app password), and Reddit and Google Play reviews
+     via Anthropic's web search tool.
+   - Cost evidence: GOV.UK search, the NVD CVE database, and web search
+     restricted to ICO, CISA, NHS, ONS and WHO.
+   - Research: arXiv and Semantic Scholar (abstracts only).
+3. **Labelling.** One Claude call (no tools) labels each retrieved item as
+   *Person with the problem*, *Practitioner / peer*, *Commentary / vendor*,
+   *Cost evidence* or *Research*, and quotes it by id. Code then checks
+   every quote appears word-for-word in the retrieved text (falling back
+   to the real text if not), and restricts labels by source: a CVE or a
+   paper can never be labelled as a person.
+4. **Scoring, in code.** The score is the average pain intensity of the
+   *Person* and *Practitioner* items only, so commentary, vendors,
+   regulators and papers can never raise it. With fewer than 5 *Person*
+   items there is no score: the result says "Not enough evidence to
+   score", explains that this is common for specialist audiences, and
+   lists who to talk to and where to find them. The thresholds are named
+   constants at the top of `lib/test-pipeline.mjs`.
 
 The browser can only ever reach this site's own `/api/*` endpoints — the
 API key never appears in any client-side file.
@@ -62,6 +99,7 @@ integration build and deploy it.
 | Name | Where | Purpose |
 |---|---|---|
 | `ANTHROPIC_API_KEY` | Netlify → Site configuration → Environment variables | Server-side only. Required for all three endpoints. Without it, each returns a "not switched on yet" message instead of crashing. |
+| `GITHUB_TOKEN`, `STACKEXCHANGE_KEY`, `BLUESKY_HANDLE` + `BLUESKY_APP_PASSWORD`, `NVD_API_KEY`, `SEMANTIC_SCHOLAR_API_KEY` | Same place | Optional, Stage 3 only. Each raises a source's rate limit or switches it on; missing ones are skipped. See `.env.example`. |
 
 Never commit this key, put it in client-side code, or paste it into chat.
 
@@ -100,6 +138,13 @@ to a serverless backend, never as a record kept on purpose:
 - Stage 3's job record (`test-background.mjs` / `test-status.mjs`) —
   holds that one generation's result just long enough for the browser to
   poll and collect it, then deletes it immediately on retrieval.
+
+Stage 3 also sends short search phrases, written by the audience-map step
+from the student's problem, to the public search APIs it uses (Stack
+Exchange, Hacker News, GitHub, the allowlisted forums, the App Store,
+GOV.UK, NVD, arXiv, Semantic Scholar, and Bluesky if configured). Those
+are search queries like "voice control windows", not the student's text,
+but each service handles them under its own terms.
 
 ## Local development
 

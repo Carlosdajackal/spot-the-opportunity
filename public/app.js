@@ -495,7 +495,7 @@
   // /api/test-status (a fast, separate endpoint) until it's done. See
   // netlify/functions/test-background.mjs and test-status.mjs.
   const TEST_POLL_INTERVAL_MS = 2000;
-  const TEST_POLL_MAX_MS = 120000; // generous ceiling for a multi-search lookup
+  const TEST_POLL_MAX_MS = 300000; // generous ceiling: audience map + parallel sources + synthesis
 
   testRunBtn.addEventListener("click", runTest);
 
@@ -573,17 +573,59 @@
     return { ok: false, message: "This is taking longer than expected. Please try again in a moment." };
   }
 
+  // Display names for the evidence labels the server assigns. Only the
+  // first two ever count towards the score (enforced server-side in
+  // lib/test-pipeline.mjs); the notes say so to the student.
+  const EVIDENCE_LABELS = [
+    { key: "person", name: "Person with the problem", note: "First-hand accounts. These count towards the score." },
+    { key: "practitioner", name: "Practitioner / peer", note: "People close to the audience. These count towards the score." },
+    { key: "commentary", name: "Commentary / vendor", note: "Blogs, marketing and companies selling a fix. Shown for context; never counts." },
+    { key: "cost", name: "Cost evidence", note: "Regulators, incidents, CVEs and statistics. Shows it matters; doesn't count as sentiment." },
+    { key: "research", name: "Research", note: "Papers. Shows the problem is recognised and unsolved; doesn't count as sentiment." },
+  ];
+  const SOURCE_STATUS_TEXT = {
+    ok: (r) => `${r.count} found`,
+    no_results: () => "nothing relevant found",
+    skipped: (r) => `skipped (${r.note})`,
+    error: (r) => `couldn't be reached${r.note ? ` (${r.note})` : ""}`,
+  };
+
+  function verdictWord(verdict) {
+    if (verdict === "migraine") return "Migraine";
+    if (verdict === "headache") return "Headache";
+    return "Not enough evidence to score";
+  }
+
   function renderTestResult(data) {
+    const insufficient = data.verdict === "insufficient";
     const card = document.getElementById("test-verdict-card");
     card.className = `verdict-card verdict-${data.verdict}`;
-    document.getElementById("test-verdict-word").textContent = data.verdict === "migraine" ? "Migraine" : "Headache";
-    document.getElementById("test-verdict-score").textContent = String(data.score);
-    document.getElementById("test-verdict-reasoning").textContent = data.reasoning;
+    document.getElementById("test-verdict-word").textContent = verdictWord(data.verdict);
+    document.getElementById("test-verdict-score-wrap").hidden = insufficient;
+    document.getElementById("test-verdict-score").textContent = insufficient ? "" : String(data.score);
+    document.getElementById("test-verdict-reasoning").textContent = insufficient
+      ? `This could be a headache, but we can't tell yet: we found ${data.counts.person} first-hand ${
+          data.counts.person === 1 ? "account" : "accounts"
+        } from people with the problem, and need at least ${data.min_person_items} to score it. ${data.reasoning}`.trim()
+      : data.reasoning;
+
+    document.getElementById("test-thin").hidden = !insufficient;
+    const talkTo = document.getElementById("test-talk-to");
+    talkTo.innerHTML = "";
+    (data.talk_to || []).forEach((t) => {
+      const li = document.createElement("li");
+      const strong = document.createElement("strong");
+      strong.textContent = t.who;
+      li.appendChild(strong);
+      if (t.where) li.appendChild(document.createTextNode(" — " + t.where));
+      talkTo.appendChild(li);
+    });
+    document.getElementById("test-talk-to-wrap").hidden = !talkTo.children.length;
 
     const sharpeningWrap = document.getElementById("test-sharpening");
     const sharpeningList = document.getElementById("test-sharpening-list");
     sharpeningList.innerHTML = "";
-    if (data.verdict === "headache" && data.sharpening_advice.length) {
+    if (data.verdict !== "migraine" && data.sharpening_advice.length) {
       data.sharpening_advice.forEach((a) => {
         const li = document.createElement("li");
         li.textContent = a;
@@ -603,7 +645,7 @@
     painPointsEl.innerHTML = "";
     if (!data.pain_points.length) {
       const p = document.createElement("p");
-      p.textContent = "No usable real-world quotes were found for this search.";
+      p.textContent = "No first-hand accounts of this problem were found in this search.";
       painPointsEl.appendChild(p);
     }
     data.pain_points.forEach((pp) => {
@@ -621,35 +663,69 @@
       if (pp.frequency) {
         const freq = document.createElement("p");
         freq.className = "pain-point-frequency";
-        freq.textContent = "Frequency: " + pp.frequency;
+        freq.textContent = "Based on " + pp.frequency;
         wrap.appendChild(freq);
       }
 
+      painPointsEl.appendChild(wrap);
+    });
+
+    const evidenceEl = document.getElementById("test-evidence");
+    evidenceEl.innerHTML = "";
+    if (!data.evidence.length) {
+      const p = document.createElement("p");
+      p.textContent = "No usable evidence was found for this search.";
+      evidenceEl.appendChild(p);
+    }
+    EVIDENCE_LABELS.forEach((label) => {
+      const group = data.evidence.filter((e) => e.label === label.key);
+      if (!group.length) return;
+
+      const wrap = document.createElement("div");
+      wrap.className = "evidence-group";
+
+      const h4 = document.createElement("h4");
+      h4.textContent = `${label.name} (${group.length})`;
+      wrap.appendChild(h4);
+
+      const note = document.createElement("p");
+      note.className = "evidence-group-note";
+      note.textContent = label.note;
+      wrap.appendChild(note);
+
       const quoteList = document.createElement("ul");
       quoteList.className = "quotes";
-      pp.quotes.forEach((q) => {
+      group.forEach((e) => {
         const li = document.createElement("li");
+        li.className = `quote-${e.label}`;
 
         const blockquote = document.createElement("blockquote");
-        blockquote.textContent = q.text;
+        blockquote.textContent = e.quote;
         li.appendChild(blockquote);
 
         const cite = document.createElement("p");
         cite.className = "quote-source";
+        const chip = document.createElement("span");
+        chip.className = "evidence-chip";
+        chip.textContent = label.name;
+        cite.appendChild(chip);
         const link = document.createElement("a");
-        link.href = q.url;
+        link.href = e.url;
         link.target = "_blank";
         link.rel = "noopener noreferrer";
-        link.textContent = q.source || q.url;
+        link.textContent = e.source || e.url;
         cite.appendChild(link);
+        if (e.signals) cite.appendChild(document.createTextNode(` · ${e.signals}`));
         li.appendChild(cite);
 
         quoteList.appendChild(li);
       });
       wrap.appendChild(quoteList);
-
-      painPointsEl.appendChild(wrap);
+      evidenceEl.appendChild(wrap);
     });
+
+    document.getElementById("test-cost-summary").textContent = data.cost_summary;
+    document.getElementById("test-cost-wrap").hidden = !(data.cost_summary && data.cost_summary.trim());
 
     const rankingEl = document.getElementById("test-priority-ranking");
     rankingEl.innerHTML = "";
@@ -669,6 +745,17 @@
     } else {
       evidenceNoteEl.hidden = true;
     }
+
+    const sourcesEl = document.getElementById("test-sources");
+    sourcesEl.innerHTML = "";
+    (data.sources || [])
+      .filter((r) => r.status !== "not_selected")
+      .forEach((r) => {
+        const li = document.createElement("li");
+        const describe = SOURCE_STATUS_TEXT[r.status] || (() => r.status);
+        li.textContent = `${r.label}: ${describe(r)}`;
+        sourcesEl.appendChild(li);
+      });
 
     testResult.hidden = false;
   }
@@ -721,12 +808,23 @@
       buildSummarySection("Root cause (Five Whys)", [dig.root_cause, ...dig.feedback.map((f) => "· " + f)])
     );
 
-    const verdictLine = `${test.verdict === "migraine" ? "Migraine" : "Headache"} (${test.score}/100) — ${test.reasoning}`;
-    summaryEl.appendChild(buildSummarySection("Evidence and verdict", [verdictLine]));
+    summaryEl.appendChild(buildSummarySection("Evidence and verdict", [formatVerdictLine(test)]));
 
     if (!judgeConclusionTouched) {
-      judgeConclusion.value = `We believe this problem is a ${test.verdict} because...`;
+      judgeConclusion.value =
+        test.verdict === "insufficient"
+          ? "We don't have enough evidence to judge this problem yet. To get it, we will talk to..."
+          : `We believe this problem is a ${test.verdict} because...`;
     }
+  }
+
+  function formatVerdictLine(test) {
+    if (test.verdict === "insufficient") {
+      return `Not enough evidence to score: this could be a headache, but we can't tell yet (${test.counts.person} first-hand ${
+        test.counts.person === 1 ? "account" : "accounts"
+      } found; at least ${test.min_person_items} needed). Get more evidence, starting with interviews. ${test.reasoning}`.trim();
+    }
+    return `${verdictWord(test.verdict)} (${test.score}/100) — ${test.reasoning}`;
   }
 
   function buildSummarySection(title, lines) {
@@ -770,19 +868,28 @@
     ];
 
     test.pain_points.forEach((pp) => {
-      lines.push(`-- ${pp.category} --`, pp.summary, `Frequency: ${pp.frequency}`);
-      pp.quotes.forEach((q) => {
-        lines.push(`"${q.text}" — ${q.source || ""} (${q.url})`);
-      });
+      lines.push(`-- ${pp.category} --`, pp.summary, `Based on: ${pp.frequency}`, "");
+    });
+
+    EVIDENCE_LABELS.forEach((label) => {
+      const group = test.evidence.filter((e) => e.label === label.key);
+      if (!group.length) return;
+      lines.push(`-- ${label.name} --`);
+      group.forEach((e) => lines.push(`"${e.quote}" — ${e.source || ""} (${e.url})`));
       lines.push("");
     });
+
+    if (test.cost_summary) lines.push(`Why it matters: ${test.cost_summary}`, "");
 
     lines.push(
       `Root cause check: ${test.root_cause_comparison.verdict} — ${test.root_cause_comparison.explanation}`,
       "",
-      `Verdict: ${test.verdict === "migraine" ? "Migraine" : "Headache"} (${test.score}/100)`,
-      test.reasoning
+      `Verdict: ${formatVerdictLine(test)}`
     );
+
+    if (test.verdict === "insufficient" && test.talk_to.length) {
+      lines.push("", "Who to talk to:", ...test.talk_to.map((t) => `· ${t.who}${t.where ? ` — ${t.where}` : ""}`));
+    }
 
     if (test.sharpening_advice.length) {
       lines.push("", "Sharpening advice:", ...test.sharpening_advice.map((a) => "· " + a));
