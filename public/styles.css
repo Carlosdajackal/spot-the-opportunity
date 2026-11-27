@@ -649,8 +649,33 @@ textarea::placeholder {
   color: var(--color-amethyst);
 }
 
-.verdict-headache .verdict-label {
+.verdict-headache .verdict-label,
+.verdict-insufficient .verdict-label {
   color: var(--color-black);
+}
+
+.verdict-card.verdict-insufficient {
+  border-style: dashed;
+}
+
+.test-thin {
+  margin: 0 0 1.5rem;
+  padding: 1rem 1.25rem;
+  border: 1.5px dashed var(--color-amethyst);
+  border-radius: var(--radius);
+}
+
+.test-thin p {
+  margin: 0 0 0.75rem;
+}
+
+.test-thin ul {
+  margin: 0.4rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.test-thin li {
+  margin-bottom: 0.35rem;
 }
 
 .verdict-reasoning {
@@ -730,6 +755,48 @@ textarea::placeholder {
 
 .quote-source a {
   color: var(--color-black);
+}
+
+.evidence-group {
+  margin-bottom: 1.5rem;
+}
+
+.evidence-group h4 {
+  margin: 0 0 0.2rem;
+  font-family: var(--font-headline);
+  font-size: 1.05rem;
+}
+
+.evidence-group-note {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+}
+
+/* Only first-hand evidence keeps the solid Amethyst rule; everything that
+   doesn't count towards the score is drawn more quietly. */
+.quotes li.quote-commentary,
+.quotes li.quote-cost,
+.quotes li.quote-research {
+  border-left: 3px dashed rgba(40, 39, 39, 0.35);
+}
+
+.evidence-chip {
+  display: inline-block;
+  margin-right: 0.4rem;
+  padding: 0.05rem 0.45rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.test-sources {
+  padding-left: 1.25rem;
+  font-size: 0.9rem;
+}
+
+.test-sources li {
+  margin-bottom: 0.25rem;
 }
 
 .priority-ranking {

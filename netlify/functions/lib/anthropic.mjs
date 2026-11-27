@@ -23,9 +23,23 @@ export const MODEL = "claude-sonnet-5";
  * @param {string} opts.system
  * @param {Array} opts.messages
  * @param {Array} [opts.tools] - e.g. the server-side web_search tool
+ * @param {number} [opts.timeoutMs] - abort the request after this long
  * @returns {Promise<any>} the parsed JSON object
  */
-export async function callClaudeForJSON({ apiKey, maxTokens, system, messages, tools }) {
+export async function callClaudeForJSON({ apiKey, maxTokens, system, messages, tools, timeoutMs }) {
+  const data = await callClaude({ apiKey, maxTokens, system, messages, tools, timeoutMs });
+  return extractJSON(data);
+}
+
+/**
+ * Calls Claude and returns the raw Messages API response body. Used
+ * directly when the caller needs more than the JSON answer — e.g. Stage
+ * 3's web search sources read the citations on each text block.
+ *
+ * @param {object} opts - as callClaudeForJSON, plus optional timeoutMs
+ * @returns {Promise<any>} the parsed response body
+ */
+export async function callClaude({ apiKey, maxTokens, system, messages, tools, timeoutMs }) {
   const body = {
     model: MODEL,
     max_tokens: maxTokens,
@@ -51,14 +65,14 @@ export async function callClaudeForJSON({ apiKey, maxTokens, system, messages, t
       "anthropic-version": ANTHROPIC_VERSION,
     },
     body: JSON.stringify(body),
+    signal: timeoutMs ? AbortSignal.timeout(timeoutMs) : undefined,
   });
 
   if (!response.ok) {
     throw new Error(`Anthropic API error ${response.status}`);
   }
 
-  const data = await response.json();
-  return extractJSON(data);
+  return response.json();
 }
 
 // Pulls the model's JSON answer out of the response. Doesn't assume the

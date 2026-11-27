@@ -261,7 +261,8 @@
         <h2 class="stage-heading"><span class="stage-heading-num">3</span> Test</h2>
         <p class="stage-intro">
           This checks whether real people express this problem online, and how painfully — so you're testing
-          against reality, not just your own instinct.
+          against reality, not just your own instinct. It works out who has the problem, searches the places
+          they actually talk, and only counts first-hand accounts. It can take two or three minutes.
         </p>
 
         <button type="button" id="test-run-btn" class="btn-primary">
@@ -271,7 +272,7 @@
         <section id="test-result" class="test-result" hidden>
           <div class="verdict-card" id="test-verdict-card">
             <p class="verdict-label">
-              <span id="test-verdict-word"></span> · <span id="test-verdict-score"></span>/100
+              <span id="test-verdict-word"></span><span id="test-verdict-score-wrap"> · <span id="test-verdict-score"></span>/100</span>
               <span
                 class="tooltip"
                 tabindex="0"
@@ -280,6 +281,18 @@
               >
             </p>
             <p class="verdict-reasoning" id="test-verdict-reasoning"></p>
+          </div>
+
+          <div id="test-thin" class="test-thin" hidden>
+            <p>
+              <strong>We couldn't find many people describing this online.</strong> That's common for specialist
+              audiences. It means you need to talk to 5 of them, not that the problem is weak. Get that evidence
+              before you judge it.
+            </p>
+            <div id="test-talk-to-wrap" hidden>
+              <strong>Who to talk to, and where to find them:</strong>
+              <ul id="test-talk-to"></ul>
+            </div>
           </div>
 
           <div id="test-sharpening" class="test-sharpening" hidden>
@@ -292,15 +305,27 @@
           <p id="test-comparison-explanation"></p>
 
           <h3>What real people are saying</h3>
-          <p class="quotes-caveat">
-            These quotes come from real posts. Click through and read them in context before you rely on them.
-          </p>
           <div id="test-pain-points"></div>
+
+          <h3>Evidence, by type</h3>
+          <p class="quotes-caveat">
+            These quotes come from real posts and pages. Click through and read them in context before you rely on
+            them. Only "Person with the problem" and "Practitioner / peer" count towards the score.
+          </p>
+          <div id="test-evidence"></div>
+
+          <div id="test-cost-wrap" hidden>
+            <h3>Why it matters</h3>
+            <p id="test-cost-summary"></p>
+          </div>
 
           <h3>Priority ranking</h3>
           <ol id="test-priority-ranking" class="priority-ranking"></ol>
 
           <p id="test-evidence-note" class="test-evidence-note" hidden></p>
+
+          <h3>Where we looked</h3>
+          <ul id="test-sources" class="test-sources"></ul>
         </section>
 
         <p id="test-status" class="status-message" role="alert" hidden></p>
