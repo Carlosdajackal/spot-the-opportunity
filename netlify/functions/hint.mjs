@@ -33,8 +33,14 @@ What the hint is about:
 - For Why 1: what causes the problem in their problem statement, especially its "because" reason.
 - For Why 2 to 5: what causes their answer to the previous why. Work from THEIR answer, not from what you think the chain should be.
 
-The hint has two parts:
-1. "nudge": one short sentence, a question or a direction to think in, about their previous answer (or, for Why 1, the problem statement). Point towards causes: people, habits, incentives, rules, time, money, knowledge, or how the system is set up. If their previous answer is a symptom, or says the same thing as an earlier answer or the problem statement in different words, say so gently first, for example: "That sounds like the same point said differently. What causes it?"
+First, check their previous answer (for Why 1 there is none, so use "ok"):
+- "repeat": it says essentially the same thing as one of their earlier answers or the problem statement, in different words. Students do this often; check carefully against EACH earlier answer and the statement.
+- "symptom": it describes an effect or consequence of the problem rather than something that causes it.
+- "ok": it genuinely names a cause, one step deeper.
+Put this in "previous_answer_check". If it is "repeat" or "symptom", the student is shown a short note saying so before your nudge, so don't say it again yourself: just ask what causes it.
+
+Then write the hint, in two parts:
+1. "nudge": one short sentence, a question or a direction to think in, about their previous answer (or, for Why 1, the problem statement). Point towards causes: people, habits, incentives, rules, time, money, knowledge, or how the system is set up.
 2. "suggested_answer": one sentence the student could write in the box for this why, if they are really stuck. Write it plainly, as a statement of cause in the same register as their own answers (no "I think", no "Maybe"). It must go exactly one step deeper than their previous answer: a cause of it, not a restatement of it, and not a leap straight to a final root cause.
 
 Rules for both parts:
@@ -42,7 +48,15 @@ Rules for both parts:
 - UK English spelling. Plain words a final-year student would use. No jargon unless they used it first.
 - Keep each part under 35 words.
 
-Return ONLY a single valid JSON object, no markdown fences: {"nudge":"...","suggested_answer":"..."}`;
+Return ONLY a single valid JSON object, no markdown fences: {"previous_answer_check":"ok|repeat|symptom","nudge":"...","suggested_answer":"..."}`;
+
+// Added in code, not left to the model, so a repeated or symptom answer is
+// always pointed out (preview testing showed the model sometimes moved on
+// without saying so).
+const CHECK_NOTES = {
+  repeat: "That sounds like the same point as before, said differently.",
+  symptom: "That sounds more like an effect of the problem than a cause of it.",
+};
 
 export default async (req, context) => {
   if (req.method !== "POST") {
@@ -102,7 +116,9 @@ export default async (req, context) => {
       messages: [{ role: "user", content }],
     });
 
-    const nudge = String(parsed?.nudge ?? "").trim();
+    const check = why > 1 ? CHECK_NOTES[parsed?.previous_answer_check] : undefined;
+    const rawNudge = String(parsed?.nudge ?? "").trim();
+    const nudge = check && rawNudge ? `${check} ${rawNudge}` : rawNudge;
     const suggestedAnswer = String(parsed?.suggested_answer ?? "").trim();
     if (!nudge || !suggestedAnswer) {
       throw new Error("Incomplete hint");
