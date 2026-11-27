@@ -14,13 +14,13 @@ import { searchHackerNews } from "./hackernews.mjs";
 import { searchArxiv, searchSemanticScholar } from "./research.mjs";
 import { searchStackExchange } from "./stackexchange.mjs";
 import { MAX_RESULTS_PER_SOURCE, SkipSource } from "./util.mjs";
-import { searchRedditAndPlay, searchRegulators } from "./web.mjs";
+import { searchRegulators, searchWebForums } from "./web.mjs";
 
 const API_SOURCE_DEADLINE_MS = 30000; // whole adapter, across all its requests
 const WEB_SOURCE_DEADLINE_MS = 100000; // web search runs several searches in one call
 
-// `keys` are the plan fields that select a source. Reddit and Google Play
-// share one web search call, so that entry is selected by either key.
+// `keys` are the plan fields that select a source. Web forums and Google
+// Play share one web search call, so that entry is selected by either key.
 export const SOURCES = [
   { name: "stackexchange", label: "Stack Exchange", keys: ["stackexchange"], run: (p) => searchStackExchange(p.stackexchange) },
   { name: "hackernews", label: "Hacker News", keys: ["hackernews"], run: (p) => searchHackerNews(p.hackernews) },
@@ -29,11 +29,11 @@ export const SOURCES = [
   { name: "appstore", label: "App Store reviews", keys: ["appstore"], run: (p) => searchAppStore(p.appstore) },
   { name: "bluesky", label: "Bluesky", keys: ["bluesky"], run: (p) => searchBluesky(p.bluesky) },
   {
-    name: "reddit_play",
-    label: "Reddit and Google Play (web search)",
-    keys: ["reddit", "playstore"],
+    name: "web_forums",
+    label: "Forums, Reddit and Google Play (web search)",
+    keys: ["forums", "playstore"],
     web: true,
-    run: (p, ctx) => searchRedditAndPlay(p, ctx),
+    run: (p, ctx) => searchWebForums(p, ctx),
   },
   { name: "govuk", label: "GOV.UK", keys: ["govuk"], run: (p) => searchGovUk(p.govuk) },
   { name: "nvd", label: "NVD CVE database", keys: ["nvd"], run: (p) => searchNvd(p.nvd) },

@@ -36,7 +36,7 @@ const SOURCE_KEYS = [
   "appstore",
   "playstore",
   "bluesky",
-  "reddit",
+  "forums",
   "govuk",
   "nvd",
   "regulators",
@@ -54,10 +54,10 @@ const PLAN_SYSTEM_PROMPT = `You plan where to look for evidence that a problem i
 
 First, work out who actually has this problem and the words THEY would use when complaining about it online. People rarely use academic or textbook terms: a clinician says "the audit log is useless", not "insufficient forensic granularity".
 
-Then pick ONLY the sources below that this audience really uses. Leave out any source that doesn't fit by omitting its key. A consumer or student-life problem should not search arXiv, Semantic Scholar or NVD. A research-level machine learning problem should not search the App Store.
+Then pick ONLY the sources below that this audience really uses. Stack Exchange and Hacker News are for technical audiences; don't choose them for everyday consumer or student problems. Leave out any source that doesn't fit by omitting its key. A consumer or student-life problem should not search arXiv, Semantic Scholar or NVD. A research-level machine learning problem should not search the App Store.
 
 Sources (key: what it is, and what to provide):
-- reddit: Reddit, via web search. Right for most consumer, student, workplace and hobbyist problems. {"subreddits":["..."],"queries":["..."]}
+- forums: forums and communities across the open web, via web search: Reddit, The Student Room, Mumsnet, Quora, patient and carer forums, trade and hobbyist forums. Right for almost every problem, and the main source for consumer, student, workplace and patient problems. Name the specific communities this audience uses. {"communities":["..."],"queries":["..."]}
 - stackexchange: Stack Exchange Q&A sites, for technical, professional and some everyday audiences. Give site API names such as stackoverflow, security, stats, datascience, superuser, softwareengineering, serverfault, dba, ux, academia, money, workplace, parenting, travel, cooking, diy. {"sites":["..."],"queries":["..."]}
 - hackernews: Hacker News, for software developers, startups and tech workers. {"queries":["..."]}
 - github: GitHub issues on open-source projects this audience uses or builds with. Give real repositories as owner/name, or none to search all of GitHub. {"repos":["owner/name"],"queries":["..."]}
@@ -122,7 +122,7 @@ function fallbackPlan(problemText) {
   const query = clip(statement, 100).replace(/…$/, "");
   return {
     audience: [],
-    sources: { reddit: { queries: [query] }, hackernews: { queries: [query] } },
+    sources: { forums: { queries: [query] }, hackernews: { queries: [query] } },
     interview_targets: [],
   };
 }
@@ -134,9 +134,9 @@ const SYNTHESIS_SYSTEM_PROMPT = `You are a market research analyst helping a UK 
 
 ABSOLUTE RULE ON QUOTES. Every quote must be copied character-for-character from the Text of the item it belongs to. Never paraphrase, tidy up, merge two passages, or invent. If an item has no sentence worth quoting, leave it out. A quote that isn't an exact copy is discarded, so an inexact quote gains nothing.
 
-Step 1. Label every item that is genuinely about this problem (leave out items that aren't):
-- "person": a first-person account from someone in the target audience who has this problem themselves ("I", "we", "my team").
-- "practitioner": someone close to the audience describing the problem as they see it in people they work with, such as a developer, clinician, teacher, carer or support worker.
+Step 1. Label every item that is genuinely about this problem. Leave out any item that isn't about this specific problem, even if it shares keywords: an unrelated question is not commentary, it is simply left out.
+- "person": a first-person account from someone in the TARGET AUDIENCE named in the problem statement, who has this problem themselves ("I", "we", "my team"). Someone outside that audience is never a person, even if they write in the first person.
+- "practitioner": someone close to the audience describing the problem as they see it in people they work with or support, such as a clinician, teacher, carer, support worker, or a developer building tools for that audience.
 - "commentary": blogs, news write-ups, consultancies, marketing pages, generic advice, or a company selling a fix.
 - "cost": regulator, government, incident, vulnerability or statistical evidence that the problem causes harm or costs something.
 - "research": academic papers.

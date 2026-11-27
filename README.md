@@ -62,8 +62,9 @@ Students work through four stages:
    - People who complain (the only sources that can count): Stack
      Exchange, Hacker News (Algolia), GitHub issues, Discourse forums on
      the allowlist in `lib/discourse-forums.mjs`, App Store reviews,
-     Bluesky (needs an app password), and Reddit and Google Play reviews
-     via Anthropic's web search tool.
+     Bluesky (needs an app password), and forums across the open web
+     (The Student Room, Mumsnet, Quora, Reddit where reachable) plus
+     Google Play reviews via Anthropic's web search tool.
    - Cost evidence: GOV.UK search, the NVD CVE database, and web search
      restricted to ICO, CISA, NHS, ONS and WHO.
    - Research: arXiv and Semantic Scholar (abstracts only).

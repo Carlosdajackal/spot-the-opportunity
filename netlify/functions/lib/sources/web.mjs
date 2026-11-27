@@ -1,10 +1,14 @@
 // Sources reached through Anthropic's server-side web search tool, for
 // places with no usable public API:
-// - Reddit (what Stage 3 has always searched) and Google Play reviews
-//   (Google has no public reviews API, and scraping it is against its
-//   terms), restricted to those domains.
+// - Forums and communities on the open web (The Student Room, Mumsnet,
+//   Quora, specialist forums, and Reddit where search can reach it), plus
+//   Google Play reviews (Google has no public reviews API, and scraping it
+//   is against its terms). This search is deliberately NOT restricted to
+//   reddit.com: restricting the tool to that domain fails with a 400, and
+//   Reddit results rarely come back through it anyway, so a Reddit-only
+//   search found nothing.
 // - Regulator and public-health sites (ICO, CISA, NHS, ONS, WHO), as cost
-//   evidence.
+//   evidence, restricted to those domains.
 //
 // Items are built ONLY from the search tool's citations: each citation's
 // `cited_text` is text Anthropic retrieved from that URL, so the quote is
@@ -21,37 +25,34 @@ export const REGULATOR_DOMAINS = ["ico.org.uk", "cisa.gov", "nhs.uk", "ons.gov.u
 
 const SYSTEM_PROMPT = `You collect public evidence for a university student testing whether a problem is real. Run web searches using the queries you are given (adjust the wording if a search finds nothing useful). Then write a plain bullet list with one line per relevant result, saying in a few words what that page says about the problem. Only include results that actually discuss the problem. Do not add an introduction, conclusion or advice.`;
 
-export async function searchRedditAndPlay(plans, { apiKey }) {
-  const reddit = plans.reddit;
+export async function searchWebForums(plans, { apiKey }) {
+  const queries = cleanList(plans.forums?.queries, { max: 4 });
+  const communities = cleanList(plans.forums?.communities, { max: 6, maxLength: 60 });
   const playApps = cleanList(plans.playstore?.apps, { max: 2, maxLength: 80 });
-  const redditQueries = cleanList(reddit?.queries, { max: 4 });
-  const subreddits = cleanList(reddit?.subreddits, { max: 6, maxLength: 40 }).map((s) => s.replace(/^\/?r\//i, ""));
-  if (!redditQueries.length && !playApps.length) return [];
+  if (!queries.length && !playApps.length) return [];
 
-  const domains = [];
   const lines = [];
-  if (redditQueries.length) {
-    domains.push("reddit.com");
+  if (queries.length) {
     lines.push(
-      `Search Reddit for first-hand posts and comments from people who have this problem.` +
-        (subreddits.length ? ` Focus on these subreddits: ${subreddits.map((s) => `r/${s}`).join(", ")}.` : ""),
-      `Queries: ${redditQueries.map((q) => `"${q}"`).join("; ")}`
+      `Search for forum threads, community discussions and comments where people describe having this problem in their own words.` +
+        (communities.length ? ` Look especially in: ${communities.join(", ")}.` : ""),
+      `Queries: ${queries.map((q) => `"${q}"`).join("; ")}`
     );
   }
   if (playApps.length) {
-    domains.push("play.google.com");
-    lines.push(`Search Google Play for user reviews and complaints about these apps: ${playApps.join(", ")}.`);
+    lines.push(`Also search Google Play (play.google.com) for user reviews and complaints about these apps: ${playApps.join(", ")}.`);
   }
 
   return runWebSearch({
     apiKey,
-    domains,
     maxUses: 5,
     task: lines.join("\n"),
-    classify: (url) =>
-      /play\.google\.com/i.test(url)
-        ? { source: "playstore", sourceLabel: "Google Play (via web search)", group: "people" }
-        : { source: "reddit", sourceLabel: "Reddit (via web search)", group: "people" },
+    classify: (url) => {
+      const host = hostOf(url);
+      if (host.endsWith("play.google.com")) return { source: "playstore", sourceLabel: "Google Play (via web search)", group: "people" };
+      if (host.endsWith("reddit.com")) return { source: "reddit", sourceLabel: "Reddit (via web search)", group: "people" };
+      return { source: "webforums", sourceLabel: `${host} (via web search)`, group: "people" };
+    },
   });
 }
 
@@ -87,7 +88,9 @@ async function runWebSearch({ apiKey, domains, maxUses, task, classify }) {
     timeoutMs: WEB_TIMEOUT_MS,
     system: SYSTEM_PROMPT,
     messages: [{ role: "user", content: task }],
-    tools: [{ type: "web_search_20250305", name: "web_search", max_uses: maxUses, allowed_domains: domains }],
+    tools: [
+      { type: "web_search_20250305", name: "web_search", max_uses: maxUses, ...(domains ? { allowed_domains: domains } : {}) },
+    ],
   });
 
   // Group every citation by URL; one page can be cited several times.
